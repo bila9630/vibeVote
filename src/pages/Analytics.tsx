@@ -234,124 +234,95 @@ const Analytics = () => {
                 </AccordionTrigger>
                 
                 <AccordionContent className="px-6 pb-6">
-                  <div className="grid lg:grid-cols-2 gap-6 pt-4">
-                    {realQuestion.responses.length > 0 && (
+                  <div className="pt-4">
+                    {realQuestion.type === "Ranking" && realQuestion.responses.length > 0 && (
                       <div>
-                        <h4 className="text-lg font-semibold mb-4 flex items-center">
-                          <BarChart3 className="mr-2 h-5 w-5 text-primary" />
-                          {realQuestion.type === "Ranking" ? "Average Placement Rankings" : "Response Distribution"}
-                        </h4>
-                        <ResponsiveContainer width="100%" height={250}>
-                          {realQuestion.type === "Ranking" ? (
-                            <BarChart 
-                              data={realQuestion.responses.map((item: any) => ({
-                                ...item,
-                                invertedScore: 6 - item.averagePlacement
-                              }))} 
-                              layout="horizontal"
-                              margin={{ left: 20, right: 30, top: 20, bottom: 20 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                              <XAxis 
-                                type="number" 
-                                domain={[0, 5]}
-                                label={{ value: 'Rating (5 = Worst, 1 = Best)', position: 'insideBottom', offset: -10 }}
-                                reversed
-                              />
-                              <YAxis 
-                                type="category" 
-                                dataKey="name" 
-                                width={100}
-                              />
-                              <Tooltip 
-                                contentStyle={{ 
-                                  backgroundColor: "hsl(var(--card))", 
-                                  border: "1px solid hsl(var(--border))",
-                                  borderRadius: "8px"
-                                }}
-                                formatter={(value: number, name: string, props: any) => [
-                                  `Avg: ${props.payload.averagePlacement.toFixed(2)}`, 
-                                  'Placement'
-                                ]}
-                              />
-                              <Bar 
-                                dataKey="invertedScore" 
-                                radius={[0, 4, 4, 0]}
-                              >
-                                {realQuestion.responses.map((entry: any, index: number) => (
-                                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                                ))}
-                              </Bar>
-                            </BarChart>
-                          ) : (
-                            <PieChart>
-                              <Pie
-                                data={realQuestion.responses}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                outerRadius={80}
-                                dataKey="value"
-                              >
-                                {realQuestion.responses.map((entry: any, idx: number) => (
-                                  <Cell key={`cell-${idx}`} fill={entry.fill} />
-                                ))}
-                              </Pie>
-                              <Tooltip 
-                                contentStyle={{ 
-                                  backgroundColor: "hsl(var(--card))", 
-                                  border: "1px solid hsl(var(--border))",
-                                  borderRadius: "8px"
-                                }} 
-                              />
-                            </PieChart>
-                          )}
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-
-                    {realQuestion.totalResponses > 0 && realQuestion.responses.length > 0 && (
-                      <div>
-                        <h4 className="text-lg font-semibold mb-4">
-                          {realQuestion.type === "Ranking" ? "Ranking Summary" : "Response Breakdown"}
-                        </h4>
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="text-lg font-semibold">Ranking Summary</h4>
+                          <Badge variant="secondary">
+                            {realQuestion.responses.length} options ranked
+                          </Badge>
+                        </div>
                         <div className="space-y-3">
-                          {realQuestion.responses?.map((response: any, idx: number) => (
+                          {realQuestion.responses?.slice(0, 4).map((response: any, idx: number) => (
                             <div key={idx} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                               <div className="flex items-center gap-3">
-                                {realQuestion.type === "Ranking" ? (
-                                  <Badge variant="outline" className="min-w-8 justify-center">
-                                    #{idx + 1}
-                                  </Badge>
-                                ) : (
-                                  <div 
-                                    className="h-3 w-3 rounded-full" 
-                                    style={{ backgroundColor: response.fill }}
-                                  />
-                                )}
+                                <Badge variant="outline" className="min-w-8 justify-center">
+                                  #{idx + 1}
+                                </Badge>
                                 <span className="font-medium">{response.name}</span>
                               </div>
                               <div className="text-right">
-                                {realQuestion.type === "Ranking" ? (
-                                  <>
-                                    <span className="font-bold text-lg">{response.averagePlacement?.toFixed(2) || 'N/A'}</span>
-                                    <span className="text-muted-foreground text-sm ml-2">
-                                      avg position ({response.responseCount || 0} votes)
-                                    </span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span className="font-bold text-lg">{response.value}</span>
-                                    <span className="text-muted-foreground text-sm ml-2">
-                                      ({realQuestion.totalResponses > 0 ? ((response.value / realQuestion.totalResponses) * 100).toFixed(1) : 0}%)
-                                    </span>
-                                  </>
-                                )}
+                                <span className="font-bold text-lg">{response.averagePlacement?.toFixed(2) || 'N/A'}</span>
+                                <span className="text-muted-foreground text-sm ml-2">
+                                  avg position ({response.responseCount || 0} votes)
+                                </span>
                               </div>
                             </div>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+                    {realQuestion.type !== "Ranking" && (
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        {realQuestion.responses.length > 0 && (
+                          <div>
+                            <h4 className="text-lg font-semibold mb-4 flex items-center">
+                              <BarChart3 className="mr-2 h-5 w-5 text-primary" />
+                              Response Distribution
+                            </h4>
+                            <ResponsiveContainer width="100%" height={250}>
+                              <PieChart>
+                                <Pie
+                                  data={realQuestion.responses}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                  outerRadius={80}
+                                  dataKey="value"
+                                >
+                                  {realQuestion.responses.map((entry: any, idx: number) => (
+                                    <Cell key={`cell-${idx}`} fill={entry.fill} />
+                                  ))}
+                                </Pie>
+                                <Tooltip 
+                                  contentStyle={{ 
+                                    backgroundColor: "hsl(var(--card))", 
+                                    border: "1px solid hsl(var(--border))",
+                                    borderRadius: "8px"
+                                  }} 
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                        )}
+
+                        {realQuestion.totalResponses > 0 && realQuestion.responses.length > 0 && (
+                          <div>
+                            <h4 className="text-lg font-semibold mb-4">Response Breakdown</h4>
+                            <div className="space-y-3">
+                              {realQuestion.responses?.map((response: any, idx: number) => (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                                  <div className="flex items-center gap-3">
+                                    <div 
+                                      className="h-3 w-3 rounded-full" 
+                                      style={{ backgroundColor: response.fill }}
+                                    />
+                                    <span className="font-medium">{response.name}</span>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="font-bold text-lg">{response.value}</span>
+                                    <span className="text-muted-foreground text-sm ml-2">
+                                      ({realQuestion.totalResponses > 0 ? ((response.value / realQuestion.totalResponses) * 100).toFixed(1) : 0}%)
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
