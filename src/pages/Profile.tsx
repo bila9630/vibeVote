@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Star, TrendingUp, Award, Calendar, Zap, Target, Crown } from "lucide-react";
+import { Trophy, Star, TrendingUp, Award, Calendar, Zap, Target, Crown, Lock } from "lucide-react";
 import { useState, useEffect } from "react";
-import { loadProgress, getXPForLevel, UserProgress } from "@/lib/xpSystem";
+import { loadProgress, getXPForLevel, UserProgress, getUnlockedRewards, getLevelRewards } from "@/lib/xpSystem";
 
 const Profile = () => {
   const [userProgress, setUserProgress] = useState<UserProgress>(loadProgress());
@@ -35,6 +35,9 @@ const Profile = () => {
   const xpForNextLevel = getXPForLevel(userProgress.level);
   const xpProgress = (userProgress.currentXP / xpForNextLevel) * 100;
 
+  const unlockedRewards = getUnlockedRewards(userProgress.level);
+  const allRewards = getLevelRewards();
+
   const userStats = {
     name: "Jane Doe",
     level: userProgress.level,
@@ -42,12 +45,12 @@ const Profile = () => {
     xpToNextLevel: xpForNextLevel,
     totalResponses: 47,
     streak: 12,
-    achievements: 8,
+    achievements: unlockedRewards.length,
     rank: "#23",
     joinDate: "January 2025",
   };
 
-  const achievements = [
+  const quickAchievements = [
     { id: 1, name: "Early Bird", description: "Completed 10 surveys", icon: Star, unlocked: true },
     { id: 2, name: "Feedback Hero", description: "50 responses submitted", icon: Trophy, unlocked: true },
     { id: 3, name: "Streak Master", description: "10 day participation streak", icon: Zap, unlocked: true },
@@ -131,47 +134,112 @@ const Profile = () => {
         </TabsList>
 
         {/* Achievements Tab */}
-        <TabsContent value="achievements" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            {achievements.map((achievement, index) => {
-              const Icon = achievement.icon;
-              return (
-                <Card
-                  key={achievement.id}
-                  className={`p-6 shadow-md transition-all animate-fade-in ${
-                    achievement.unlocked
-                      ? "border-primary/20 hover:shadow-lg hover:scale-105"
-                      : "opacity-60"
-                  }`}
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`h-12 w-12 rounded-lg flex items-center justify-center ${
-                        achievement.unlocked
-                          ? "bg-gradient-to-br from-primary to-secondary"
-                          : "bg-muted"
-                      }`}
-                    >
-                      <Icon
-                        className={`h-6 w-6 ${
-                          achievement.unlocked ? "text-primary-foreground" : "text-muted-foreground"
+        <TabsContent value="achievements" className="space-y-6">
+          {/* Quick Achievements */}
+          <div>
+            <h3 className="text-xl font-semibold mb-4">Quick Achievements</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              {quickAchievements.map((achievement, index) => {
+                const Icon = achievement.icon;
+                return (
+                  <Card
+                    key={achievement.id}
+                    className={`p-6 shadow-md transition-all animate-fade-in ${
+                      achievement.unlocked
+                        ? "border-primary/20 hover:shadow-lg hover:scale-105"
+                        : "opacity-60"
+                    }`}
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div
+                        className={`h-12 w-12 rounded-lg flex items-center justify-center ${
+                          achievement.unlocked
+                            ? "bg-gradient-to-br from-primary to-secondary"
+                            : "bg-muted"
                         }`}
-                      />
+                      >
+                        <Icon
+                          className={`h-6 w-6 ${
+                            achievement.unlocked ? "text-primary-foreground" : "text-muted-foreground"
+                          }`}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold mb-1">{achievement.name}</h3>
+                        <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                        {achievement.unlocked && (
+                          <Badge variant="secondary" className="mt-2 text-xs">
+                            Unlocked
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold mb-1">{achievement.name}</h3>
-                      <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                      {achievement.unlocked && (
-                        <Badge variant="secondary" className="mt-2 text-xs">
-                          Unlocked
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Level-Based Milestones */}
+          <div>
+            <h3 className="text-xl font-semibold mb-4">Level Milestones</h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {allRewards.map((reward, index) => {
+                const isUnlocked = reward.level <= userProgress.level;
+                
+                return (
+                  <Card
+                    key={reward.level}
+                    className={`p-6 shadow-lg transition-all animate-fade-in ${
+                      !isUnlocked ? "opacity-60" : "hover:scale-105 hover:shadow-xl"
+                    }`}
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <div className="space-y-4">
+                      {/* Icon and Level */}
+                      <div className="flex items-start justify-between">
+                        <div className={`text-5xl ${
+                          isUnlocked ? "" : "grayscale opacity-50"
+                        }`}>
+                          {reward.icon}
+                        </div>
+                        <Badge variant={isUnlocked ? "default" : "secondary"} className="text-xs">
+                          Level {reward.level}
                         </Badge>
-                      )}
+                      </div>
+
+                      {/* Content */}
+                      <div>
+                        <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
+                          {reward.title}
+                          {!isUnlocked && <Lock className="h-4 w-4 text-muted-foreground" />}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {reward.description}
+                        </p>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="pt-3 border-t border-border">
+                        {isUnlocked ? (
+                          <div className="flex items-center gap-2 text-success">
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="font-semibold">Unlocked!</span>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground">
+                            Unlock at Level {reward.level}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              );
-            })}
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         </TabsContent>
 
