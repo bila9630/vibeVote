@@ -561,6 +561,61 @@ const QuestionDetail = () => {
               </div>
             </Card>
           )}
+
+          {/* Actionable Insights */}
+          {trendAnalysis.actionableInsights && (
+            <Card className="p-6 mb-8 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold flex items-center">
+                  <Wrench className="mr-3 h-6 w-6 text-primary" />
+                  Actionable Insights
+                </h2>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Complexity Score</p>
+                  <p className="text-4xl font-bold text-primary">
+                    {trendAnalysis.actionableInsights.complexityScore}
+                  </p>
+                  <p className="text-xs text-muted-foreground">out of 200</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {trendAnalysis.actionableInsights.recommendations?.map((rec: any, idx: number) => (
+                  <div 
+                    key={idx} 
+                    className={`p-4 rounded-lg border-l-4 ${
+                      rec.priority === 'high' 
+                        ? 'bg-destructive/5 border-destructive' 
+                        : rec.priority === 'medium'
+                        ? 'bg-accent/5 border-accent'
+                        : 'bg-primary/5 border-primary'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
+                          rec.priority === 'high'
+                            ? 'bg-destructive/10 text-destructive'
+                            : rec.priority === 'medium'
+                            ? 'bg-accent/10 text-accent'
+                            : 'bg-primary/10 text-primary'
+                        }`}>
+                          {idx + 1}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg mb-2">{rec.action}</h3>
+                        <p className="text-sm text-muted-foreground">{rec.justification}</p>
+                        <Badge variant="outline" className="mt-2 capitalize">
+                          {rec.priority} Priority
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </>
       )}
 

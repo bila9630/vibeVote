@@ -23,7 +23,8 @@ serve(async (req) => {
         JSON.stringify({ 
           themes: [],
           dominantTrend: "No responses yet",
-          feasibilityAnalysis: null
+          feasibilityAnalysis: null,
+          actionableInsights: null
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -53,6 +54,11 @@ Your task:
    - Easy to solve items (2-3 specific items)
    - Challenging items (2-3 specific items)
    - Overall realism score (1-10)
+5. Provide actionable insights:
+   - A complexity score (20-200) indicating how difficult the overall problem is to solve (20=very easy, 200=extremely complex)
+   - 2-4 specific, actionable recommendations with consolidated justifications
+   - Each recommendation should be practical and directly tied to the analysis
+   - Prioritize recommendations as "high", "medium", or "low"
 
 Return ONLY valid JSON in this exact format:
 {
@@ -71,6 +77,16 @@ Return ONLY valid JSON in this exact format:
     "cons": ["Con 1", "Con 2", "Con 3"],
     "easySolutions": ["Easy item 1", "Easy item 2"],
     "challenges": ["Challenge 1", "Challenge 2"]
+  },
+  "actionableInsights": {
+    "complexityScore": 85,
+    "recommendations": [
+      {
+        "action": "Specific actionable recommendation",
+        "justification": "Why this matters and how it addresses the feedback",
+        "priority": "high"
+      }
+    ]
   }
 }`;
 
