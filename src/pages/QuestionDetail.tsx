@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Heart, AlertTriangle, Sparkles, Wrench, Target, TrendingDown, TrendingUp, BarChart3, MessageSquare, ThumbsUp, ThumbsDown, Trophy } from "lucide-react";
+import { ArrowLeft, Heart, AlertTriangle, Sparkles, Wrench, Target, TrendingDown, TrendingUp, BarChart3, MessageSquare, ThumbsUp, ThumbsDown, Trophy, Lightbulb, CheckCircle2, XCircle, Gauge } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import ReactWordcloud from "react-wordcloud";
 import { supabase } from "@/integrations/supabase/client";
@@ -175,36 +175,75 @@ const QuestionDetail = () => {
   const navigate = useNavigate();
   const [realQuestion, setRealQuestion] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [trendAnalysis, setTrendAnalysis] = useState<any>(null);
+  const [analyzingTrends, setAnalyzingTrends] = useState(false);
 
   useEffect(() => {
     const loadQuestionDetail = async () => {
-      if (id === 'a5f7c5f5-2285-4ec8-8bf5-ffeade3eb5ce') {
-        // Fetch real question from database
-        const { data: questionData, error: questionError } = await supabase
-          .from('questions')
-          .select('*')
-          .eq('id', id)
-          .single();
+      // Try to fetch real question from database
+      const { data: questionData, error: questionError } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-        if (questionError) {
-          console.error('Error loading question:', questionError);
-          setLoading(false);
-          return;
+      if (questionError) {
+        console.error('Error loading question:', questionError);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch all responses
+      const { data: responsesData, error: responsesError } = await supabase
+        .from('user_responses')
+        .select('*')
+        .eq('question_id', id);
+
+      if (responsesError) {
+        console.error('Error loading responses:', responsesError);
+        setLoading(false);
+        return;
+      }
+
+      const totalResponses = responsesData.length;
+      const responseRate = totalResponses > 0 ? 100 : 0;
+
+      if (questionData.question_type === 'open-ended') {
+        // For open-ended questions, analyze trends
+        setRealQuestion({
+          id: questionData.id,
+          question: questionData.question_text,
+          type: 'Open-ended',
+          totalResponses,
+          responseRate,
+          responses: [],
+        });
+        
+        if (totalResponses > 0) {
+          setAnalyzingTrends(true);
+          const openEndedResponses = responsesData
+            .filter(r => r.response_text)
+            .map(r => r.response_text);
+          
+          try {
+            const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-trends', {
+              body: {
+                question: questionData.question_text,
+                responses: openEndedResponses
+              }
+            });
+            
+            if (!analysisError && analysisData) {
+              setTrendAnalysis(analysisData);
+            }
+          } catch (error) {
+            console.error('Error analyzing trends:', error);
+          } finally {
+            setAnalyzingTrends(false);
+          }
         }
-
-        // Fetch all responses
-        const { data: responsesData, error: responsesError } = await supabase
-          .from('user_responses')
-          .select('*')
-          .eq('question_id', id);
-
-        if (responsesError) {
-          console.error('Error loading responses:', responsesError);
-          setLoading(false);
-          return;
-        }
-
-        // Aggregate responses
+      } else {
+        // For multiple choice / yes-no questions
         const options = (questionData.options as any)?.options || [];
         const responseCounts: { [key: string]: number } = {};
         
@@ -228,9 +267,6 @@ const QuestionDetail = () => {
                 "hsl(var(--destructive))"
         }));
 
-        const totalResponses = responsesData.length;
-        const responseRate = totalResponses > 0 ? 100 : 0;
-
         setRealQuestion({
           id: questionData.id,
           question: questionData.question_text,
@@ -242,6 +278,7 @@ const QuestionDetail = () => {
           responses: chartData,
         });
       }
+      
       setLoading(false);
     };
 
@@ -431,6 +468,144 @@ const QuestionDetail = () => {
         )}
 
       </div>
+
+      {/* Trend Analysis for Open-ended Questions */}
+      {question.type === "Open-ended" && trendAnalysis && (
+        <>
+          <Card className="p-6 mb-8 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-2 border-purple-500/20">
+            <h2 className="text-2xl font-semibold mb-4 flex items-center">
+              <TrendingUp className="mr-3 h-6 w-6 text-purple-600 dark:text-purple-400" />
+              Underlying Trends Analysis
+            </h2>
+            <p className="text-lg mb-6 font-medium text-purple-900 dark:text-purple-100">
+              {trendAnalysis.dominantTrend}
+            </p>
+            
+            <div className="grid md:grid-cols-2 gap-4">
+              {trendAnalysis.themes?.map((theme: any, idx: number) => (
+                <div key={idx} className="p-4 bg-background/80 rounded-lg border border-border">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-lg">{theme.name}</h3>
+                    <Badge variant="outline" className="text-lg font-bold">
+                      {theme.percentage}%
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">{theme.description}</p>
+                  {theme.examples && theme.examples.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Examples:</p>
+                      {theme.examples.slice(0, 2).map((example: string, exIdx: number) => (
+                        <p key={exIdx} className="text-xs italic pl-3 border-l-2 border-primary/30">
+                          "{example}"
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Feasibility Analysis */}
+          {trendAnalysis.feasibilityAnalysis && (
+            <Card className="p-6 mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold flex items-center">
+                  <Gauge className="mr-3 h-6 w-6 text-primary" />
+                  Feasibility Assessment
+                </h2>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Realism Score</p>
+                  <p className="text-4xl font-bold text-primary">
+                    {trendAnalysis.feasibilityAnalysis.realismScore}/10
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                {/* Pros */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg flex items-center text-success">
+                    <CheckCircle2 className="h-5 w-5 mr-2" />
+                    Pros
+                  </h3>
+                  <div className="space-y-2">
+                    {trendAnalysis.feasibilityAnalysis.pros?.map((pro: string, idx: number) => (
+                      <div key={idx} className="flex items-start gap-2 p-3 bg-success/5 rounded-lg border border-success/20">
+                        <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                        <p className="text-sm">{pro}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Cons */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg flex items-center text-destructive">
+                    <XCircle className="h-5 w-5 mr-2" />
+                    Challenges
+                  </h3>
+                  <div className="space-y-2">
+                    {trendAnalysis.feasibilityAnalysis.cons?.map((con: string, idx: number) => (
+                      <div key={idx} className="flex items-start gap-2 p-3 bg-destructive/5 rounded-lg border border-destructive/20">
+                        <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                        <p className="text-sm">{con}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Easy Solutions */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg flex items-center">
+                    <Lightbulb className="h-5 w-5 mr-2 text-primary" />
+                    Easily Solvable
+                  </h3>
+                  <div className="space-y-2">
+                    {trendAnalysis.feasibilityAnalysis.easySolutions?.map((item: string, idx: number) => (
+                      <div key={idx} className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg">
+                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs flex-shrink-0">
+                          {idx + 1}
+                        </div>
+                        <p className="text-sm pt-0.5">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Challenging Items */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg flex items-center">
+                    <AlertTriangle className="h-5 w-5 mr-2 text-accent" />
+                    More Challenging
+                  </h3>
+                  <div className="space-y-2">
+                    {trendAnalysis.feasibilityAnalysis.challenges?.map((item: string, idx: number) => (
+                      <div key={idx} className="flex items-start gap-2 p-3 bg-accent/5 rounded-lg">
+                        <div className="h-6 w-6 rounded-full bg-accent/10 flex items-center justify-center text-accent font-semibold text-xs flex-shrink-0">
+                          {idx + 1}
+                        </div>
+                        <p className="text-sm pt-0.5">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+        </>
+      )}
+
+      {analyzingTrends && question.type === "Open-ended" && (
+        <Card className="p-6 mb-8">
+          <div className="flex items-center justify-center gap-3">
+            <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+            <p className="text-muted-foreground">Analyzing trends with AI...</p>
+          </div>
+        </Card>
+      )}
 
       {/* Key Observations and Actionable Insights */}
       <div className="grid lg:grid-cols-2 gap-6">

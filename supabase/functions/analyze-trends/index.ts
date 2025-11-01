@@ -11,49 +11,58 @@ serve(async (req) => {
   }
 
   try {
-    const { question, answer, questionType } = await req.json();
+    const { question, responses } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Create evaluation prompt based on question type
-    let evaluationPrompt = "";
-    
-    if (questionType === "open-ended") {
-      evaluationPrompt = `Evaluate this response to the question: "${question}"
-
-Response: "${answer}"
-
-Rate the quality of this response on a scale from 50 to 100 XP based on:
-- Thoughtfulness and depth (how well they articulated their thoughts)
-- Relevance to the question
-- Clarity and coherence
-- Constructiveness and actionability
-
-Return ONLY a JSON object with this exact format:
-{"xp": <number between 50-100>, "reason": "<brief 1-sentence explanation>"}`;
-    } else if (questionType === "ideation") {
-      evaluationPrompt = `Evaluate these brainstorming ideas for the question: "${question}"
-
-Ideas submitted: ${answer}
-
-Rate the quality of these ideas on a scale from 50 to 100 XP based on:
-- Creativity and originality
-- Relevance to the question
-- Practicality and feasibility
-- Number and diversity of ideas
-
-Return ONLY a JSON object with this exact format:
-{"xp": <number between 50-100>, "reason": "<brief 1-sentence explanation>"}`;
-    } else {
-      // For multiple choice, yes/no, ranking - give standard XP
+    if (!responses || responses.length === 0) {
       return new Response(
-        JSON.stringify({ xp: 50, reason: "Response recorded" }),
+        JSON.stringify({ 
+          themes: [],
+          dominantTrend: "No responses yet",
+          feasibilityAnalysis: null
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const analysisPrompt = `Analyze these responses to the question: "${question}"
+
+All responses:
+${responses.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}
+
+Your task:
+1. Identify the dominant underlying trends/themes (e.g., health benefits vs gifts, time-saving vs comfort)
+2. Group responses into 2-4 major themes with percentages
+3. Provide a feasibility analysis for implementing these suggestions:
+   - Pros (2-3 points)
+   - Cons/Challenges (2-3 points)  
+   - Easy to solve items (2-3 specific items)
+   - Challenging items (2-3 specific items)
+   - Overall realism score (1-10)
+
+Return ONLY valid JSON in this exact format:
+{
+  "themes": [
+    {
+      "name": "Theme name",
+      "description": "Brief description",
+      "percentage": 45,
+      "examples": ["example1", "example2"]
+    }
+  ],
+  "dominantTrend": "One sentence describing the overall dominant direction",
+  "feasibilityAnalysis": {
+    "realismScore": 7,
+    "pros": ["Pro 1", "Pro 2", "Pro 3"],
+    "cons": ["Con 1", "Con 2", "Con 3"],
+    "easySolutions": ["Easy item 1", "Easy item 2"],
+    "challenges": ["Challenge 1", "Challenge 2"]
+  }
+}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -66,11 +75,11 @@ Return ONLY a JSON object with this exact format:
         messages: [
           {
             role: "system",
-            content: "You are an expert evaluator of survey responses. You provide fair, constructive feedback and assign XP scores between 50-100 based on response quality. Always return valid JSON."
+            content: "You are an expert at analyzing survey data and identifying trends. Always return valid JSON only."
           },
           {
             role: "user",
-            content: evaluationPrompt
+            content: analysisPrompt
           }
         ],
       }),
@@ -95,28 +104,24 @@ Return ONLY a JSON object with this exact format:
     }
 
     const data = await response.json();
-    const evaluationText = data.choices[0].message.content;
+    const analysisText = data.choices[0].message.content;
     
-    console.log("AI evaluation response:", evaluationText);
+    console.log("AI trend analysis response:", analysisText);
     
     // Clean up response - remove markdown code blocks if present
-    const cleanedText = evaluationText
+    const cleanedText = analysisText
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim();
     
-    // Parse the JSON response
-    const evaluation = JSON.parse(cleanedText);
-    
-    // Ensure XP is within bounds
-    const xp = Math.max(50, Math.min(100, evaluation.xp));
+    const analysis = JSON.parse(cleanedText);
     
     return new Response(
-      JSON.stringify({ xp, reason: evaluation.reason }),
+      JSON.stringify(analysis),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error in evaluate-response function:", error);
+    console.error("Error in analyze-trends function:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -1,1 +1,7 @@
 project_id = "myggeoklmdffbjrphprf"
+
+[functions.evaluate-response]
+verify_jwt = false
+
+[functions.analyze-trends]
+verify_jwt = false
