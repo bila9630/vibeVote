@@ -36,7 +36,7 @@ export function IdeationQuestion({
   const ideationInputRef = useRef<HTMLInputElement>(null);
 
   const [ideationStarted, setIdeationStarted] = useState(false);
-  const [ideationTimeLeft, setIdeationTimeLeft] = useState(60);
+  const [ideationTimeLeft, setIdeationTimeLeft] = useState(12);
   const [ideationIdeas, setIdeationIdeas] = useState<string[]>([]);
   const [ideationInput, setIdeationInput] = useState("");
   const [ideationScore, setIdeationScore] = useState(0);
@@ -49,7 +49,7 @@ export function IdeationQuestion({
 
   const startIdeationGame = () => {
     setIdeationStarted(true);
-    setIdeationTimeLeft(60);
+    setIdeationTimeLeft(12);
     setIdeationIdeas([]);
     setIdeationScore(0);
     setIdeationCombo(0);
@@ -105,6 +105,28 @@ export function IdeationQuestion({
     if (alphanumericCount / idea.length < 0.5) {
       toast.error("Invalid input!", {
         description: "Please enter meaningful text.",
+        duration: 2000,
+      });
+      return;
+    }
+
+    // Check for inappropriate words
+    const inappropriateWords = ['fuck', 'shit', 'damn', 'ass', 'bitch', 'hell'];
+    const lowerIdea = idea.toLowerCase();
+    const hasInappropriateWord = inappropriateWords.some(word => 
+      lowerIdea.includes(word)
+    );
+    
+    if (hasInappropriateWord) {
+      const playfulMessages = [
+        "Language, please 😅",
+        "Nice try, but let's keep it friendly 👀",
+        "Oops, let's keep it clean!"
+      ];
+      const randomMessage = playfulMessages[Math.floor(Math.random() * playfulMessages.length)];
+      
+      toast.error(randomMessage, {
+        description: "Try rephrasing that idea!",
         duration: 2000,
       });
       return;
@@ -274,7 +296,7 @@ export function IdeationQuestion({
         <div>
           <h3 className="text-2xl font-semibold mb-2">Idea Sprint Challenge</h3>
           <p className="text-muted-foreground">
-            You have 60 seconds to generate as many creative ideas as possible. Type one idea per line and hit Enter to submit!
+            You have 12 seconds to generate as many creative ideas as possible. Type one idea per line and hit Enter to submit!
           </p>
         </div>
         <div className="flex gap-2">
@@ -312,7 +334,7 @@ export function IdeationQuestion({
 
         <HorseRaceAnimation isActive={ideationStarted} speed={horseSpeed} hasIdeas={ideationIdeas.length > 0} />
 
-        <Progress value={(ideationTimeLeft / 60) * 100} className="h-2" />
+        <Progress value={(ideationTimeLeft / 12) * 100} className="h-2" />
 
         {showCoolingWarning && (
           <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg animate-pulse">
@@ -380,7 +402,7 @@ export function IdeationQuestion({
         <Lightbulb className="h-16 w-16 text-success mx-auto mb-4" />
         <h3 className="text-3xl font-semibold mb-2">Time's Up! Amazing Work! 🎉</h3>
         <p className="text-muted-foreground">
-          You generated {ideationIdeas.length} creative ideas in 60 seconds!
+          You generated {ideationIdeas.length} creative ideas in 12 seconds!
         </p>
       </div>
 
