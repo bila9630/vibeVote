@@ -34,8 +34,8 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Brand Header */}
         <div className="p-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
+          <div className={`flex items-center ${open ? 'gap-2' : 'justify-center'}`}>
+            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
               <Zap className="h-5 w-5 text-primary-foreground" />
             </div>
             {open && (
