@@ -95,8 +95,14 @@ const Homepage = () => {
     if (!currentQuestion) return null;
 
     return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-        <Card className="max-w-2xl w-full p-8 shadow-2xl animate-scale-in">
+      <div 
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+        onClick={() => setCurrentQuestion(null)}
+      >
+        <Card 
+          className="max-w-2xl w-full p-8 shadow-2xl animate-scale-in"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="space-y-6">
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
