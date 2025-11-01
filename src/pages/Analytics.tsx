@@ -100,9 +100,10 @@ const Analytics = () => {
           }));
         } else if (questionData.question_type === 'ranking') {
           // For ranking questions, calculate average placement
-          const options = (questionData.options as any)?.options || [];
+          const rankingOptions = (questionData.options as any)?.rankingOptions || [];
+          const options = rankingOptions.map((opt: any) => opt.name);
           
-          if (options.length > 0 && responsesForQuestion.length > 0) {
+          if (options.length > 0) {
             const placementSums: { [key: string]: number } = {};
             const placementCounts: { [key: string]: number } = {};
             
@@ -111,30 +112,33 @@ const Analytics = () => {
               placementCounts[opt] = 0;
             });
 
-            responsesForQuestion.forEach((response) => {
-              try {
-                const rankingData = typeof response.response_text === 'string' 
-                  ? JSON.parse(response.response_text) 
-                  : response.response_text;
-                
-                if (Array.isArray(rankingData)) {
-                  rankingData.forEach((item: string, index: number) => {
-                    if (placementSums.hasOwnProperty(item)) {
-                      placementSums[item] += (index + 1); // 1-indexed placement
-                      placementCounts[item]++;
-                    }
-                  });
+            if (responsesForQuestion.length > 0) {
+              responsesForQuestion.forEach((response) => {
+                try {
+                  const rankingData = typeof response.response_text === 'string' 
+                    ? JSON.parse(response.response_text) 
+                    : response.response_text;
+                  
+                  if (Array.isArray(rankingData)) {
+                    rankingData.forEach((item: string, index: number) => {
+                      if (placementSums.hasOwnProperty(item)) {
+                        placementSums[item] += (index + 1); // 1-indexed placement
+                        placementCounts[item]++;
+                      }
+                    });
+                  }
+                } catch (e) {
+                  console.error('Error parsing ranking data:', e);
                 }
-              } catch (e) {
-                console.error('Error parsing ranking data:', e);
-              }
-            });
+              });
+            }
 
             chartData = options.map((opt: string) => ({
               name: opt,
               averagePlacement: placementCounts[opt] > 0 
                 ? placementSums[opt] / placementCounts[opt] 
-                : options.length + 1,
+                : options.length, // Default to last place if no votes
+              responseCount: placementCounts[opt],
               fill: "hsl(var(--primary))"
             })).sort((a, b) => a.averagePlacement - b.averagePlacement);
           }
@@ -257,7 +261,7 @@ const Analytics = () => {
                       </div>
                     )}
 
-                    {realQuestion.totalResponses > 0 && (
+                    {realQuestion.totalResponses > 0 && realQuestion.responses.length > 0 && (
                       <div>
                         <h4 className="text-lg font-semibold mb-4">
                           {realQuestion.type === "Ranking" ? "Ranking Summary" : "Response Breakdown"}
@@ -281,8 +285,10 @@ const Analytics = () => {
                               <div className="text-right">
                                 {realQuestion.type === "Ranking" ? (
                                   <>
-                                    <span className="font-bold text-lg">{response.averagePlacement.toFixed(2)}</span>
-                                    <span className="text-muted-foreground text-sm ml-2">avg position</span>
+                                    <span className="font-bold text-lg">{response.averagePlacement?.toFixed(2) || 'N/A'}</span>
+                                    <span className="text-muted-foreground text-sm ml-2">
+                                      avg position ({response.responseCount || 0} votes)
+                                    </span>
                                   </>
                                 ) : (
                                   <>
