@@ -82,9 +82,18 @@ const Homepage = () => {
         description: "Answer submitted successfully!",
         icon: <Star className="h-4 w-4 text-accent" />,
       });
-      setAnsweredQuestions([...answeredQuestions, currentQuestion.id]);
-      setCurrentQuestion(null);
+      
+      const newAnsweredQuestions = [...answeredQuestions, currentQuestion.id];
+      setAnsweredQuestions(newAnsweredQuestions);
       setOpenAnswer("");
+      
+      // Find the next unanswered question
+      const nextQuestion = availableQuestions.find(
+        (q) => !newAnsweredQuestions.includes(q.id)
+      );
+      
+      // Automatically open the next question or close the modal
+      setCurrentQuestion(nextQuestion || null);
     }
   };
 
