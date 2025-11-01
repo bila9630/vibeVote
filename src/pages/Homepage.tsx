@@ -50,6 +50,8 @@ const Homepage = () => {
   
   // Ranking game state
   const [rankingStarted, setRankingStarted] = useState(false);
+  const [showRankingResults, setShowRankingResults] = useState(false);
+  const [userRanking, setUserRanking] = useState<string[]>([]);
   
   // Ideation game state
   const [ideationStarted, setIdeationStarted] = useState(false);
@@ -300,9 +302,19 @@ const Homepage = () => {
         setShowLevelUp(true);
       }
       
+      // Store ranking and show results
+      setUserRanking(ranking);
+      setShowRankingResults(true);
+      setRankingStarted(false);
+    }
+  };
+
+  const handleRankingResultsClose = () => {
+    if (currentQuestion) {
       setAnsweredQuestions([...answeredQuestions, currentQuestion.id]);
       setCurrentQuestion(null);
-      setRankingStarted(false);
+      setShowRankingResults(false);
+      setUserRanking([]);
     }
   };
   
@@ -1065,6 +1077,93 @@ const Homepage = () => {
                   Continue to Next Question
                 </Button>
               </div>
+            </div>
+          </Card>
+        </div>
+      )}
+      
+      {/* Ranking Results Modal */}
+      {showRankingResults && currentQuestion && userRanking.length > 0 && (
+        <div 
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+          onClick={handleRankingResultsClose}
+        >
+          <Card 
+            className="max-w-3xl w-full p-8 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-6">
+              <div className="text-center">
+                <Trophy className="h-16 w-16 mx-auto mb-4 text-primary" />
+                <h2 className="text-2xl font-bold mb-2">See How Colleagues Ranked</h2>
+                <p className="text-muted-foreground">Compare your ranking with others</p>
+              </div>
+
+              {/* Your Ranking */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <span className="text-primary">Your Ranking</span>
+                </h3>
+                <div className="space-y-2">
+                  {userRanking.slice(0, 3).map((item, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg border-2 border-primary/20">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
+                        {index + 1}
+                      </div>
+                      <span className="font-medium text-lg">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Colleague 1 Ranking */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <span className="text-muted-foreground">Sarah's Ranking</span>
+                </h3>
+                <div className="space-y-2">
+                  {(() => {
+                    // Mock ranking - shuffle the items
+                    const shuffled = [...userRanking].sort(() => Math.random() - 0.5);
+                    return shuffled.slice(0, 3).map((item, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted-foreground/20 flex items-center justify-center text-foreground font-bold">
+                          {index + 1}
+                        </div>
+                        <span className="font-medium">{item}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+
+              {/* Colleague 2 Ranking */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <span className="text-muted-foreground">Michael's Ranking</span>
+                </h3>
+                <div className="space-y-2">
+                  {(() => {
+                    // Mock ranking - shuffle differently
+                    const shuffled = [...userRanking].sort(() => 0.5 - Math.random());
+                    return shuffled.slice(0, 3).map((item, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted-foreground/20 flex items-center justify-center text-foreground font-bold">
+                          {index + 1}
+                        </div>
+                        <span className="font-medium">{item}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+
+              <Button 
+                className="w-full" 
+                onClick={handleRankingResultsClose}
+              >
+                Continue
+              </Button>
             </div>
           </Card>
         </div>
