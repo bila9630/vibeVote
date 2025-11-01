@@ -267,6 +267,34 @@ const Homepage = () => {
     const idea = ideationInput.trim();
     if (!idea || !ideationStarted) return;
     
+    // Validation: Check for meaningful input
+    if (idea.length < 3) {
+      toast.error("Idea too short!", {
+        description: "Please provide at least 3 characters.",
+        duration: 2000,
+      });
+      return;
+    }
+    
+    // Check if it contains at least one letter (not just symbols/numbers)
+    if (!/[a-zA-Z]/.test(idea)) {
+      toast.error("Invalid input!", {
+        description: "Please enter a valid idea with actual words.",
+        duration: 2000,
+      });
+      return;
+    }
+    
+    // Check if it's mostly random characters (more than 50% non-alphanumeric)
+    const alphanumericCount = (idea.match(/[a-zA-Z0-9]/g) || []).length;
+    if (alphanumericCount / idea.length < 0.5) {
+      toast.error("Invalid input!", {
+        description: "Please enter meaningful text.",
+        duration: 2000,
+      });
+      return;
+    }
+    
     const now = Date.now();
     const timeSinceLastIdea = (now - lastIdeaTime) / 1000;
     
