@@ -226,7 +226,7 @@ const Homepage = () => {
     setLastIdeaTime(Date.now());
     setShowCoolingWarning(false);
     setIdeationComplete(false);
-    setHorseSpeed(5);
+    setHorseSpeed(0);
     setTimeout(() => ideationInputRef.current?.focus(), 100);
   };
   
@@ -334,15 +334,17 @@ const Homepage = () => {
     
     const idleCheck = setInterval(() => {
       const timeSinceLastIdea = (Date.now() - lastIdeaTime) / 1000;
-      setShowCoolingWarning(timeSinceLastIdea > 5);
       
-      // Slow down horse based on idle time
-      if (timeSinceLastIdea > 10) {
+      // Stop horse after 5 seconds, show warning after 3 seconds
+      if (timeSinceLastIdea >= 5) {
         setHorseSpeed(0);
-      } else if (timeSinceLastIdea > 5) {
-        setHorseSpeed(Math.max(1, Math.floor(5 - timeSinceLastIdea / 2)));
+        setShowCoolingWarning(true);
+      } else if (timeSinceLastIdea >= 3) {
+        setShowCoolingWarning(true);
+      } else {
+        setShowCoolingWarning(false);
       }
-    }, 1000);
+    }, 100);
     
     return () => clearInterval(idleCheck);
   }, [ideationStarted, lastIdeaTime, ideationComplete]);
@@ -653,7 +655,9 @@ const Homepage = () => {
                   <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg animate-pulse">
                     <AlertTriangle className="h-5 w-5 text-destructive" />
                     <span className="text-sm font-medium text-destructive">
-                      ⚠️ The idea engine is cooling down!
+                      {horseSpeed === 0 
+                        ? "⚠️ Horse stopped! Submit an idea to keep racing!" 
+                        : "⚠️ Horse is slowing down! Submit ideas quickly!"}
                     </span>
                   </div>
                 )}

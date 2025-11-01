@@ -105,11 +105,11 @@ export const HorseRaceAnimation = ({ isActive, speed }: HorseRaceAnimationProps)
       </div>
       
       {/* Status text */}
-      {speed === 0 && (
+      {speed === 0 && isActive && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="bg-background/90 backdrop-blur-sm px-4 py-2 rounded-lg border-2 border-destructive animate-pulse">
             <span className="text-sm font-semibold text-destructive">
-              Horse stopped! Generate ideas to keep racing!
+              Horse stopped! Submit an idea to start racing again!
             </span>
           </div>
         </div>
