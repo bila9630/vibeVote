@@ -11,6 +11,15 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { HorseRaceAnimation } from "@/components/HorseRaceAnimation";
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  UserProgress, 
+  LevelReward, 
+  loadProgress, 
+  saveProgress, 
+  addXP, 
+  getXPForLevel,
+  getUnlockedRewards
+} from "@/lib/xpSystem";
 
 type QuestionType = "multiple-choice" | "open-ended" | "yes-no" | "ranking" | "ideation";
 
@@ -60,6 +69,11 @@ const Homepage = () => {
   // Vote distribution state
   const [showVoteDistribution, setShowVoteDistribution] = useState(false);
   const [voteDistribution, setVoteDistribution] = useState<{ option: string; count: number; percentage: number }[]>([]);
+
+  // XP and leveling state
+  const [userProgress, setUserProgress] = useState<UserProgress>(loadProgress());
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [newRewards, setNewRewards] = useState<LevelReward[]>([]);
 
   // Load questions from database
   useEffect(() => {
@@ -157,6 +171,16 @@ const Homepage = () => {
         description: evaluationReason,
         icon: <Star className="h-4 w-4 text-accent" />,
       });
+      
+      // Add XP and check for level up
+      const xpResult = addXP(userProgress, earnedXP);
+      setUserProgress(xpResult.newProgress);
+      saveProgress(xpResult.newProgress);
+      
+      if (xpResult.leveledUp) {
+        setNewRewards(xpResult.newRewards);
+        setShowLevelUp(true);
+      }
       
       // For multiple choice and yes/no, show vote distribution
       if (currentQuestion.type === 'multiple-choice' || currentQuestion.type === 'yes-no') {
@@ -287,6 +311,16 @@ const Homepage = () => {
         description: "Ranking complete!",
         icon: <Trophy className="h-4 w-4 text-accent" />,
       });
+      
+      // Add XP and check for level up
+      const xpResult = addXP(userProgress, currentQuestion.xpReward);
+      setUserProgress(xpResult.newProgress);
+      saveProgress(xpResult.newProgress);
+      
+      if (xpResult.leveledUp) {
+        setNewRewards(xpResult.newRewards);
+        setShowLevelUp(true);
+      }
       
       setAnsweredQuestions([...answeredQuestions, currentQuestion.id]);
       setCurrentQuestion(null);
@@ -450,6 +484,16 @@ const Homepage = () => {
         description: evaluationReason,
         icon: <Lightbulb className="h-4 w-4 text-accent" />,
       });
+      
+      // Add XP and check for level up
+      const xpResult = addXP(userProgress, totalXP);
+      setUserProgress(xpResult.newProgress);
+      saveProgress(xpResult.newProgress);
+      
+      if (xpResult.leveledUp) {
+        setNewRewards(xpResult.newRewards);
+        setShowLevelUp(true);
+      }
       
       setAnsweredQuestions([...answeredQuestions, currentQuestion.id]);
       setCurrentQuestion(null);
@@ -903,10 +947,39 @@ const Homepage = () => {
     <div className="container mx-auto px-4 py-8 max-w-5xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Welcome back, Jane! 👋</h1>
-        <p className="text-muted-foreground text-lg">
-          You have {availableQuestions.length - answeredQuestions.length} new questions waiting
-        </p>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Welcome back, Jane! 👋</h1>
+            <p className="text-muted-foreground text-lg">
+              You have {availableQuestions.length - answeredQuestions.length} new questions waiting
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="flex items-center gap-2 mb-2">
+              <Trophy className="h-6 w-6 text-primary" />
+              <span className="text-3xl font-bold">Level {userProgress.level}</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {userProgress.currentXP} / {getXPForLevel(userProgress.level)} XP
+            </p>
+          </div>
+        </div>
+        
+        {/* XP Progress Bar */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Progress to Level {userProgress.level + 1}</span>
+            <span className="font-semibold">
+              {Math.floor((userProgress.currentXP / getXPForLevel(userProgress.level)) * 100)}%
+            </span>
+          </div>
+          <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+              style={{ width: `${(userProgress.currentXP / getXPForLevel(userProgress.level)) * 100}%` }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Daily Streak Card */}
@@ -1149,6 +1222,63 @@ const Homepage = () => {
                   Continue to Next Question
                 </Button>
               </div>
+            </div>
+          </Card>
+        </div>
+      )}
+      
+      {/* Level Up Modal */}
+      {showLevelUp && (
+        <div 
+          className="fixed inset-0 bg-background/90 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setShowLevelUp(false)}
+        >
+          <Card 
+            className="max-w-lg w-full p-8 shadow-2xl animate-scale-in border-2 border-primary"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center space-y-6">
+              <div className="relative">
+                <div className="absolute inset-0 animate-ping">
+                  <Trophy className="h-24 w-24 mx-auto text-primary/20" />
+                </div>
+                <Trophy className="h-24 w-24 mx-auto text-primary relative" />
+              </div>
+              
+              <div>
+                <h2 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  Level Up!
+                </h2>
+                <p className="text-5xl font-bold mb-4">Level {userProgress.level}</p>
+                <p className="text-muted-foreground">
+                  You've reached a new milestone!
+                </p>
+              </div>
+
+              {newRewards.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg">🎁 New Rewards Unlocked!</h3>
+                  {newRewards.map((reward, index) => (
+                    <Card key={index} className="p-4 bg-primary/5">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{reward.icon}</span>
+                        <div className="text-left flex-1">
+                          <h4 className="font-semibold">{reward.title}</h4>
+                          <p className="text-sm text-muted-foreground">{reward.description}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              <Button 
+                size="lg"
+                className="w-full" 
+                onClick={() => setShowLevelUp(false)}
+              >
+                Continue
+              </Button>
             </div>
           </Card>
         </div>

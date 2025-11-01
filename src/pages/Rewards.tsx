@@ -1,128 +1,51 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Gift, Crown, Coffee, Shirt, Headphones, Ticket, Lock, TreePine, ArrowRight } from "lucide-react";
-import { toast } from "sonner";
+import { Gift, Lock, TreePine, ArrowRight, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-interface Reward {
-  id: number;
-  name: string;
-  cost: number;
-  icon: any;
-  available: boolean;
-  description: string;
-  category: string;
-}
-
-const rewards: Reward[] = [
-  {
-    id: 1,
-    name: "Coffee Voucher",
-    cost: 100,
-    icon: Coffee,
-    available: true,
-    description: "Enjoy a premium coffee on us",
-    category: "Food & Drink",
-  },
-  {
-    id: 2,
-    name: "Extra Day Off",
-    cost: 500,
-    icon: Ticket,
-    available: true,
-    description: "One additional vacation day",
-    category: "Time Off",
-  },
-  {
-    id: 3,
-    name: "Company Swag",
-    cost: 200,
-    icon: Shirt,
-    available: true,
-    description: "Premium branded merchandise",
-    category: "Merchandise",
-  },
-  {
-    id: 4,
-    name: "Wireless Headphones",
-    cost: 800,
-    icon: Headphones,
-    available: true,
-    description: "High-quality noise-canceling headphones",
-    category: "Tech",
-  },
-  {
-    id: 5,
-    name: "VIP Parking Spot",
-    cost: 300,
-    icon: Crown,
-    available: true,
-    description: "Reserved parking for one month",
-    category: "Perks",
-  },
-  {
-    id: 6,
-    name: "Premium Gift Box",
-    cost: 1000,
-    icon: Gift,
-    available: false,
-    description: "Exclusive curated gift collection",
-    category: "Special",
-  },
-  {
-    id: 7,
-    name: "Plant a Tree",
-    cost: 150,
-    icon: TreePine,
-    available: true,
-    description: "Plant a real tree and help the environment",
-    category: "Impact",
-  },
-];
+import { loadProgress, getUnlockedRewards, getLevelRewards } from "@/lib/xpSystem";
+import { useState, useEffect } from "react";
 
 const Rewards = () => {
-  const userXP = 850;
   const navigate = useNavigate();
+  const [userProgress, setUserProgress] = useState(loadProgress());
   const totalTreesPlanted = 127;
+  
+  useEffect(() => {
+    // Reload progress when component mounts
+    setUserProgress(loadProgress());
+  }, []);
 
-  const handleRedeem = (reward: Reward) => {
-    if (!reward.available) {
-      toast.error("This reward is not available yet");
-      return;
-    }
-    
-    if (userXP < reward.cost) {
-      toast.error("Not enough XP!", {
-        description: `You need ${reward.cost - userXP} more XP`,
-      });
-      return;
-    }
-
-    toast.success("Reward redeemed!", {
-      description: `${reward.name} has been added to your account`,
-    });
-  };
+  const unlockedRewards = getUnlockedRewards(userProgress.level);
+  const allRewards = getLevelRewards();
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Rewards Shop</h1>
-        <p className="text-muted-foreground">Redeem your XP for awesome rewards</p>
+        <h1 className="text-4xl font-bold mb-2">Achievements & Rewards</h1>
+        <p className="text-muted-foreground">Your progress and unlocked milestones</p>
       </div>
 
-      {/* XP Balance Card */}
+      {/* Level and XP Card */}
       <Card className="p-6 mb-8 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 border-2 border-primary/20 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground mb-1">Available Balance</p>
-            <p className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              {userXP} XP
+            <p className="text-sm text-muted-foreground mb-1">Current Progress</p>
+            <p className="text-4xl font-bold mb-2 flex items-center gap-3">
+              <Trophy className="h-10 w-10 text-primary" />
+              Level {userProgress.level}
+            </p>
+            <p className="text-lg text-muted-foreground">
+              {userProgress.totalXP} Total XP Earned
             </p>
           </div>
-          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg animate-glow">
-            <Gift className="h-8 w-8 text-primary-foreground" />
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground mb-1">Unlocked</p>
+            <p className="text-3xl font-bold text-primary">
+              {unlockedRewards.length} / {allRewards.length}
+            </p>
+            <p className="text-sm text-muted-foreground">Achievements</p>
           </div>
         </div>
       </Card>
@@ -147,61 +70,58 @@ const Rewards = () => {
         </div>
       </Card>
 
-      {/* Rewards Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {rewards.map((reward, index) => {
-          const canAfford = userXP >= reward.cost;
-          const Icon = reward.icon;
+      {/* Achievements Grid */}
+      <h2 className="text-2xl font-bold mb-4">Your Achievements</h2>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {allRewards.map((reward, index) => {
+          const isUnlocked = reward.level <= userProgress.level;
           
           return (
             <Card
-              key={reward.id}
-              className={`p-6 shadow-lg hover:shadow-xl transition-all animate-fade-in ${
-                !reward.available ? "opacity-60" : "hover:scale-105"
+              key={reward.level}
+              className={`p-6 shadow-lg transition-all animate-fade-in ${
+                !isUnlocked ? "opacity-60" : "hover:scale-105 hover:shadow-xl"
               }`}
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div className="space-y-4">
-                {/* Icon and Badge */}
+                {/* Icon and Level */}
                 <div className="flex items-start justify-between">
-                  <div className={`h-14 w-14 rounded-xl flex items-center justify-center ${
-                    reward.available
-                      ? "bg-gradient-to-br from-primary to-secondary"
-                      : "bg-muted"
+                  <div className={`text-5xl ${
+                    isUnlocked ? "" : "grayscale opacity-50"
                   }`}>
-                    <Icon className={`h-7 w-7 ${
-                      reward.available ? "text-primary-foreground" : "text-muted-foreground"
-                    }`} />
+                    {reward.icon}
                   </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {reward.category}
+                  <Badge variant={isUnlocked ? "default" : "secondary"} className="text-xs">
+                    Level {reward.level}
                   </Badge>
                 </div>
 
                 {/* Content */}
                 <div>
                   <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
-                    {reward.name}
-                    {!reward.available && <Lock className="h-4 w-4 text-muted-foreground" />}
+                    {reward.title}
+                    {!isUnlocked && <Lock className="h-4 w-4 text-muted-foreground" />}
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <p className="text-sm text-muted-foreground">
                     {reward.description}
                   </p>
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between pt-3 border-t border-border">
-                  <div>
-                    <p className="text-2xl font-bold text-primary">{reward.cost} XP</p>
-                  </div>
-                  <Button
-                    onClick={() => handleRedeem(reward)}
-                    disabled={!canAfford || !reward.available}
-                    variant={canAfford && reward.available ? "default" : "outline"}
-                    size="sm"
-                  >
-                    {!reward.available ? "Locked" : canAfford ? "Redeem" : "Need More XP"}
-                  </Button>
+                <div className="pt-3 border-t border-border">
+                  {isUnlocked ? (
+                    <div className="flex items-center gap-2 text-success">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="font-semibold">Unlocked!</span>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Unlock at Level {reward.level}
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
