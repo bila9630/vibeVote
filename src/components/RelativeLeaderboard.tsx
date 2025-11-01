@@ -40,9 +40,10 @@ export function RelativeLeaderboard({ isMobile }: RelativeLeaderboardProps) {
           // Find current user's position
           const userIndex = data.findIndex(u => u.username === currentUsername);
           
+          const rankedUsers: LeaderboardUser[] = [];
+          
           if (userIndex !== -1) {
             // Get users around current user
-            const rankedUsers: LeaderboardUser[] = [];
             
             // User above (if exists)
             if (userIndex > 0) {
@@ -65,9 +66,17 @@ export function RelativeLeaderboard({ isMobile }: RelativeLeaderboardProps) {
                 position: userIndex + 2
               });
             }
-            
-            setUsers(rankedUsers);
+          } else {
+            // Fallback: show top 3 users if current user not found in database
+            for (let i = 0; i < Math.min(3, data.length); i++) {
+              rankedUsers.push({
+                ...data[i],
+                position: i + 1
+              });
+            }
           }
+          
+          setUsers(rankedUsers);
         }
       } catch (error) {
         console.error('Error fetching leaderboard:', error);
