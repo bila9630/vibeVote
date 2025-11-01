@@ -1,5 +1,5 @@
 import { Home, BarChart3, Gift, User, Trophy, Zap } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
   Sidebar,
@@ -23,6 +23,8 @@ const navItems = [
 
 export function AppSidebar() {
   const { open, setOpenMobile, isMobile } = useSidebar();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [userProgress, setUserProgress] = useState<UserProgress>(loadProgress());
 
   useEffect(() => {
@@ -65,7 +67,16 @@ export function AppSidebar() {
     };
   }, []);
 
-  const handleNavClick = () => {
+  const handleNavClick = (url: string, e: React.MouseEvent) => {
+    // If clicking on the current route, force a refresh
+    if (location.pathname === url) {
+      e.preventDefault();
+      // Navigate to the same route to trigger a refresh
+      navigate(url, { replace: true });
+      // Force a window reload to fully refresh the page
+      window.location.reload();
+    }
+    
     // Close sidebar on mobile when navigation item is clicked
     if (isMobile) {
       setOpenMobile(false);
@@ -103,7 +114,7 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end
-                      onClick={handleNavClick}
+                      onClick={(e) => handleNavClick(item.url, e)}
                       className={({ isActive }) =>
                         isActive
                           ? "bg-primary/10 text-primary font-medium"
