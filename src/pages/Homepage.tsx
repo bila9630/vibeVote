@@ -49,7 +49,7 @@ const Homepage = () => {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [openAnswer, setOpenAnswer] = useState("");
   const [availableQuestions, setAvailableQuestions] = useState<Question[]>([]);
-  const [showChallengeSurface, setShowChallengeSurface] = useState(true);
+  const [showChallengeSurface, setShowChallengeSurface] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "play">("play");
   const [scrollToQuestionId, setScrollToQuestionId] = useState<string | null>(null);
   const questionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
