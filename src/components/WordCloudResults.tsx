@@ -3,7 +3,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Loader2 } from "lucide-react";
-import ReactWordcloud from "react-wordcloud";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -34,6 +33,7 @@ interface WordCloudResultsProps {
 
 export const WordCloudResults = ({ questionId, question, onClose, onCancel }: WordCloudResultsProps) => {
   const [keypoints, setKeypoints] = useState<Keypoint[]>([]);
+  const [displayedKeypoints, setDisplayedKeypoints] = useState<Keypoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedKeypoints, setLikedKeypoints] = useState<Set<string>>(new Set());
   const anonymousUserId = getAnonymousUserId();
@@ -58,6 +58,9 @@ export const WordCloudResults = ({ questionId, question, onClose, onCancel }: Wo
 
       if (data?.keypoints) {
         setKeypoints(data.keypoints);
+        // Randomly select up to 6 keypoints
+        const shuffled = [...data.keypoints].sort(() => Math.random() - 0.5);
+        setDisplayedKeypoints(shuffled.slice(0, 6));
       }
     } catch (error) {
       console.error('Error:', error);
@@ -95,6 +98,12 @@ export const WordCloudResults = ({ questionId, question, onClose, onCancel }: Wo
           ? { ...kp, likes: kp.likes - 1, value: Math.max(20, kp.value - 10) }
           : kp
       ));
+      
+      setDisplayedKeypoints(prev => prev.map(kp => 
+        kp.id === keypointId 
+          ? { ...kp, likes: kp.likes - 1, value: Math.max(20, kp.value - 10) }
+          : kp
+      ));
 
       toast.success('Unliked!');
     } else {
@@ -115,6 +124,12 @@ export const WordCloudResults = ({ questionId, question, onClose, onCancel }: Wo
       setLikedKeypoints(prev => new Set(prev).add(keypointId));
       
       setKeypoints(prev => prev.map(kp => 
+        kp.id === keypointId 
+          ? { ...kp, likes: kp.likes + 1, value: kp.value + 10 }
+          : kp
+      ));
+      
+      setDisplayedKeypoints(prev => prev.map(kp => 
         kp.id === keypointId 
           ? { ...kp, likes: kp.likes + 1, value: kp.value + 10 }
           : kp
@@ -158,37 +173,17 @@ export const WordCloudResults = ({ questionId, question, onClose, onCancel }: Wo
             </div>
           </div>
 
-          {keypoints.length === 0 ? (
+          {displayedKeypoints.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Not enough responses yet to generate themes</p>
             </div>
           ) : (
             <>
-              {/* Word Cloud */}
-              <div className="h-[400px] bg-muted/20 rounded-lg flex items-center justify-center">
-                <ReactWordcloud
-                  words={keypoints.map(kp => ({ text: kp.text, value: kp.value }))}
-                  options={{
-                    rotations: 2,
-                    rotationAngles: [0, 0],
-                    fontSizes: [20, 80],
-                    colors: ["hsl(var(--primary))", "hsl(var(--primary) / 0.8)", "hsl(var(--primary) / 0.6)"],
-                    enableTooltip: true,
-                    deterministic: true,
-                    padding: 10,
-                    fontFamily: "inherit",
-                    scale: "sqrt",
-                  }}
-                />
-              </div>
-
               {/* Keypoint List with Likes */}
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Like the themes that resonate with you:</h3>
+                <h3 className="text-lg font-semibold">Like the suggestions from your colleagues that resonate with you:</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {keypoints
-                    .sort((a, b) => b.likes - a.likes)
-                    .map((keypoint) => (
+                  {displayedKeypoints.map((keypoint) => (
                       <div
                         key={keypoint.id}
                         className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border-2 border-transparent hover:border-primary/20 transition-all"
