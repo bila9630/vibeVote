@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Star, TrendingUp, Award, Calendar, Zap, Target, Crown, Lock } from "lucide-react";
-import { loadProgress, getUnlockedRewards, getLevelRewards, getXPForLevel } from "@/lib/xpSystem";
+import { loadProgress, getUnlockedRewards, getLevelRewards, getXPForLevel, getLevelFromXP, getCurrentLevelXP } from "@/lib/xpSystem";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -50,9 +50,16 @@ const Profile = () => {
         // Check if current user already exists in data
         const userExists = data.some(user => user.username === 'Jane Doe');
         
-        // Combine and sort by level first, then by total_xp
+        // Combine and normalize levels based on total XP
         const combined = userExists ? data : [...data, currentUser];
-        const sorted = combined.sort((a, b) => {
+        const normalized = combined.map(user => ({
+          ...user,
+          level: getLevelFromXP(user.total_xp), // Recalculate level from total XP
+          current_xp: getCurrentLevelXP(user.total_xp), // Recalculate current level XP
+        }));
+        
+        // Sort by level first, then by total_xp
+        const sorted = normalized.sort((a, b) => {
           if (b.level !== a.level) {
             return b.level - a.level; // Sort by level descending
           }
