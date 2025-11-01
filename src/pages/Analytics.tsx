@@ -115,20 +115,30 @@ const Analytics = () => {
             if (responsesForQuestion.length > 0) {
               responsesForQuestion.forEach((response) => {
                 try {
-                  const rankingData = typeof response.response_text === 'string' 
-                    ? JSON.parse(response.response_text) 
-                    : response.response_text;
+                  // Handle response_text - it might already be parsed by Supabase JSONB
+                  let rankingData = response.response_text;
                   
-                  if (Array.isArray(rankingData)) {
+                  // Only parse if it's actually a string
+                  if (typeof rankingData === 'string' && rankingData.trim().startsWith('[')) {
+                    try {
+                      rankingData = JSON.parse(rankingData);
+                    } catch (parseError) {
+                      console.warn('Failed to parse ranking data, skipping:', response.id);
+                      return; // Skip this response
+                    }
+                  }
+                  
+                  // Verify it's an array and process
+                  if (Array.isArray(rankingData) && rankingData.length > 0) {
                     rankingData.forEach((item: string, index: number) => {
-                      if (placementSums.hasOwnProperty(item)) {
+                      if (item && placementSums.hasOwnProperty(item)) {
                         placementSums[item] += (index + 1); // 1-indexed placement
                         placementCounts[item]++;
                       }
                     });
                   }
                 } catch (e) {
-                  console.error('Error parsing ranking data:', e);
+                  console.warn('Error processing ranking data for response:', response.id, e);
                 }
               });
             }
@@ -241,7 +251,7 @@ const Analytics = () => {
                               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                               <XAxis 
                                 type="number" 
-                                domain={[1, 'dataMax']}
+                                domain={[0, 'dataMax + 0.5']}
                                 label={{ value: 'Average Placement (Lower is Better)', position: 'insideBottom', offset: -10 }}
                               />
                               <YAxis 
