@@ -1,5 +1,6 @@
 import { Home, BarChart3, Gift, User, Trophy, Zap } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +12,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { loadProgress, getXPForLevel, UserProgress } from "@/lib/xpSystem";
 
 const navItems = [
   { title: "Homepage", url: "/", icon: Home },
@@ -21,6 +23,47 @@ const navItems = [
 
 export function AppSidebar() {
   const { open, setOpenMobile, isMobile } = useSidebar();
+  const [userProgress, setUserProgress] = useState<UserProgress>(loadProgress());
+
+  useEffect(() => {
+    // Load progress initially
+    setUserProgress(loadProgress());
+
+    // Listen for storage changes from other tabs/windows
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'userProgress') {
+        setUserProgress(loadProgress());
+      }
+    };
+
+    // Listen for visibility changes to reload progress
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        setUserProgress(loadProgress());
+      }
+    };
+
+    // Listen for custom XP update events
+    const handleXPUpdate = () => {
+      setUserProgress(loadProgress());
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('xpUpdated', handleXPUpdate);
+
+    // Poll every 2 seconds as fallback
+    const interval = setInterval(() => {
+      setUserProgress(loadProgress());
+    }, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('xpUpdated', handleXPUpdate);
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleNavClick = () => {
     // Close sidebar on mobile when navigation item is clicked
@@ -28,6 +71,9 @@ export function AppSidebar() {
       setOpenMobile(false);
     }
   };
+
+  const xpForNextLevel = getXPForLevel(userProgress.level);
+  const xpProgress = (userProgress.currentXP / xpForNextLevel) * 100;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border hidden md:flex" side="left">
@@ -84,11 +130,14 @@ export function AppSidebar() {
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Level 5</span>
-                  <span className="font-medium">850 / 1000 XP</span>
+                  <span className="text-muted-foreground">Level {userProgress.level}</span>
+                  <span className="font-medium">{userProgress.currentXP} / {xpForNextLevel} XP</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-primary to-secondary w-[85%] rounded-full" />
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500" 
+                    style={{ width: `${xpProgress}%` }}
+                  />
                 </div>
               </div>
             </div>

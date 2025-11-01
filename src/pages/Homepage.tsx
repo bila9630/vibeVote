@@ -196,6 +196,9 @@ const Homepage = () => {
       setUserProgress(xpResult.newProgress);
       saveProgress(xpResult.newProgress);
       
+      // Dispatch custom event for sidebar to update
+      window.dispatchEvent(new Event('xpUpdated'));
+      
       if (xpResult.leveledUp) {
         setNewRewards(xpResult.newRewards);
         setShowLevelUp(true);
@@ -335,6 +338,9 @@ const Homepage = () => {
       const xpResult = addXP(userProgress, currentQuestion.xpReward);
       setUserProgress(xpResult.newProgress);
       saveProgress(xpResult.newProgress);
+      
+      // Dispatch custom event for sidebar to update
+      window.dispatchEvent(new Event('xpUpdated'));
       
       if (xpResult.leveledUp) {
         setNewRewards(xpResult.newRewards);
@@ -508,6 +514,9 @@ const Homepage = () => {
       const xpResult = addXP(userProgress, totalXP);
       setUserProgress(xpResult.newProgress);
       saveProgress(xpResult.newProgress);
+      
+      // Dispatch custom event for sidebar to update
+      window.dispatchEvent(new Event('xpUpdated'));
       
       if (xpResult.leveledUp) {
         setNewRewards(xpResult.newRewards);

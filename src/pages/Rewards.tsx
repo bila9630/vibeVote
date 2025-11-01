@@ -81,6 +81,9 @@ const Rewards = () => {
     localStorage.setItem('userProgress', JSON.stringify(newProgress));
     localStorage.setItem('redeemedItems', JSON.stringify(newRedeemedItems));
     
+    // Dispatch custom event for sidebar to update
+    window.dispatchEvent(new Event('xpUpdated'));
+    
     toast.success(`${item.icon} Redeemed!`, {
       description: `${item.name} has been added to your rewards. Check with HR to claim it!`,
     });
