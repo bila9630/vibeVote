@@ -53,49 +53,8 @@ serve(async (req) => {
 
     console.log(`Found ${responses.length} responses`);
 
-    // Check if keypoints already exist for this question
-    const { data: existingKeypoints } = await supabase
-      .from('response_keypoints')
-      .select('id, keypoint')
-      .eq('question_id', questionId);
-
-    if (existingKeypoints && existingKeypoints.length > 0) {
-      console.log('Using existing keypoints');
-      // Fetch like counts for existing keypoints
-      const { data: likes } = await supabase
-        .from('keypoint_likes')
-        .select('keypoint_id');
-
-      const likeCounts: { [key: string]: number } = {};
-      if (likes) {
-        likes.forEach((like) => {
-          likeCounts[like.keypoint_id] = (likeCounts[like.keypoint_id] || 0) + 1;
-        });
-      }
-
-      // Get response_count from database
-      const { data: fullKeypoints } = await supabase
-        .from('response_keypoints')
-        .select('id, keypoint, response_count')
-        .eq('question_id', questionId);
-
-      const keypointsWithLikes = (fullKeypoints || existingKeypoints).map((kp) => {
-        const responseCount = ('response_count' in kp ? kp.response_count : 1) as number;
-        const likeCount = likeCounts[kp.id] || 0;
-        
-        return {
-          id: kp.id,
-          text: kp.keypoint,
-          value: 20 + (responseCount * 15) + (likeCount * 10), // Base + frequency + likes
-          likes: likeCount,
-          count: responseCount,
-        };
-      });
-
-      return new Response(JSON.stringify({ keypoints: keypointsWithLikes }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Always regenerate keypoints to include new responses
+    // Don't use cached keypoints to ensure latest data is represented
 
     // Extract keypoints using AI with frequency tracking
     const prompt = `Question: "${question}"
@@ -200,8 +159,34 @@ Example format:
 
     console.log(`Extracted ${Object.keys(keypointsWithCount).length} keypoints with frequencies`);
 
-    // Save keypoints to database
+    // Save keypoints to database (delete old ones first)
     if (Object.keys(keypointsWithCount).length > 0) {
+      // Get existing likes before deletion
+      const { data: existingKeypoints } = await supabase
+        .from('response_keypoints')
+        .select('id, keypoint')
+        .eq('question_id', questionId);
+
+      const { data: likes } = await supabase
+        .from('keypoint_likes')
+        .select('keypoint_id');
+
+      const likeCounts: { [key: string]: number } = {};
+      if (likes && existingKeypoints) {
+        existingKeypoints.forEach((kp) => {
+          const likeCount = likes.filter(like => like.keypoint_id === kp.id).length;
+          if (likeCount > 0) {
+            likeCounts[kp.keypoint.toLowerCase()] = likeCount;
+          }
+        });
+      }
+
+      // Now delete existing keypoints for this question
+      await supabase
+        .from('response_keypoints')
+        .delete()
+        .eq('question_id', questionId);
+
       const keypointRecords = Object.entries(keypointsWithCount)
         .slice(0, 20)
         .map(([keypoint, count]) => ({
@@ -219,13 +204,35 @@ Example format:
         console.error('Error saving keypoints:', saveError);
       } else {
         console.log('Saved keypoints to database');
-        const formattedKeypoints = (savedKeypoints || []).map((kp) => ({
-          id: kp.id,
-          text: kp.keypoint,
-          value: 20 + (kp.response_count * 15), // Base 20 + frequency multiplier
-          likes: 0,
-          count: kp.response_count,
-        }));
+        
+        // Transfer likes to new keypoints with matching text
+        if (savedKeypoints && Object.keys(likeCounts).length > 0) {
+          for (const kp of savedKeypoints) {
+            const matchedLikes = likeCounts[kp.keypoint.toLowerCase()] || 0;
+            if (matchedLikes > 0) {
+              // Create placeholder likes (in a real app, you'd need to track actual user IDs)
+              const likesToInsert = Array.from({ length: matchedLikes }, (_, i) => ({
+                keypoint_id: kp.id,
+                user_id: crypto.randomUUID(),
+              }));
+              
+              await supabase
+                .from('keypoint_likes')
+                .insert(likesToInsert);
+            }
+          }
+        }
+
+        const formattedKeypoints = (savedKeypoints || []).map((kp) => {
+          const likeCount = likeCounts[kp.keypoint.toLowerCase()] || 0;
+          return {
+            id: kp.id,
+            text: kp.keypoint,
+            value: 20 + (kp.response_count * 15) + (likeCount * 10), // Base + frequency + likes
+            likes: likeCount,
+            count: kp.response_count,
+          };
+        });
 
         return new Response(JSON.stringify({ keypoints: formattedKeypoints }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

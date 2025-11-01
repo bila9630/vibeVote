@@ -149,9 +149,13 @@ export const WordCloudResults = ({ questionId, question, onClose, onCancel }: Wo
         onClick={(e) => e.stopPropagation()}
       >
         <div className="space-y-6">
-          <div className="text-center">
+          <div>
             <h2 className="text-2xl font-bold mb-2">Community Response Themes</h2>
-            <p className="text-muted-foreground">Key themes from all responses</p>
+            <p className="text-muted-foreground mb-4">Key themes from all responses</p>
+            <div className="bg-muted/30 rounded-lg p-4">
+              <p className="text-sm font-medium text-muted-foreground mb-1">Question:</p>
+              <p className="text-base">{question}</p>
+            </div>
           </div>
 
           {keypoints.length === 0 ? (
