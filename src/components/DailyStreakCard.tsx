@@ -6,11 +6,33 @@ interface DailyStreakCardProps {
 }
 
 export function DailyStreakCard({ isMobile }: DailyStreakCardProps) {
-  // Always show 3 consecutive days with full names
+  // Get current date and calculate yesterday, today, tomorrow
+  const now = new Date();
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const shortDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
   const days = [
-    { day: 'Wednesday', short: 'Wed', completed: true }, 
-    { day: 'Thursday', short: 'Thu', completed: true }, 
-    { day: 'Friday', short: 'Fri', completed: false }
+    { 
+      day: dayNames[yesterday.getDay()], 
+      short: shortDayNames[yesterday.getDay()], 
+      completed: true 
+    }, 
+    { 
+      day: dayNames[now.getDay()], 
+      short: shortDayNames[now.getDay()], 
+      completed: true 
+    }, 
+    { 
+      day: dayNames[tomorrow.getDay()], 
+      short: shortDayNames[tomorrow.getDay()], 
+      completed: false 
+    }
   ];
 
   const currentStreak = days.filter(d => d.completed).length;
