@@ -50,9 +50,14 @@ const Profile = () => {
         // Check if current user already exists in data
         const userExists = data.some(user => user.username === 'Jane Doe');
         
-        // Combine and sort
+        // Combine and sort by level first, then by total_xp
         const combined = userExists ? data : [...data, currentUser];
-        const sorted = combined.sort((a, b) => b.total_xp - a.total_xp);
+        const sorted = combined.sort((a, b) => {
+          if (b.level !== a.level) {
+            return b.level - a.level; // Sort by level descending
+          }
+          return b.total_xp - a.total_xp; // Then by total XP descending
+        });
         
         setLeaderboardData(sorted);
       }
