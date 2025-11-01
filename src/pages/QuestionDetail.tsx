@@ -492,103 +492,114 @@ const QuestionDetail = () => {
             </div>
           </Card>
 
-          {/* Feasibility Analysis */}
+          {/* Feasibility Assessment */}
           {trendAnalysis.feasibilityAnalysis && (
-            <Card className="p-6 mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold flex items-center">
-                  <Gauge className="mr-3 h-6 w-6 text-primary" />
-                  Feasibility Assessment
-                </h2>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Realism Score</p>
-                  <p className="text-4xl font-bold text-primary">
-                    {trendAnalysis.feasibilityAnalysis.realismScore}/10
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
-                {/* Pros */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-lg flex items-center text-success">
-                    <CheckCircle2 className="h-5 w-5 mr-2" />
-                    Pros
-                  </h3>
-                  <div className="space-y-2">
-                    {trendAnalysis.feasibilityAnalysis.pros?.map((pro: string, idx: number) => (
-                      <div key={idx} className="flex items-start gap-2 p-3 bg-success/5 rounded-lg border border-success/20">
-                        <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                        <p className="text-sm">{pro}</p>
-                      </div>
-                    ))}
+            <>
+              <Card className="p-6 mb-6 bg-gradient-to-br from-blue-500/5 to-blue-600/5 border-2 border-blue-500/20">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-semibold flex items-center">
+                    <Gauge className="mr-3 h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    Feasibility Assessment
+                  </h2>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Realism Score</p>
+                    <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                      {trendAnalysis.feasibilityAnalysis.realismScore}/10
+                    </p>
                   </div>
                 </div>
 
-                {/* Cons */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-lg flex items-center text-destructive">
-                    <XCircle className="h-5 w-5 mr-2" />
-                    Challenges
-                  </h3>
-                  <div className="space-y-2">
-                    {trendAnalysis.feasibilityAnalysis.cons?.map((con: string, idx: number) => (
-                      <div key={idx} className="flex items-start gap-2 p-3 bg-destructive/5 rounded-lg border border-destructive/20">
-                        <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                        <p className="text-sm">{con}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Easy Solutions */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-lg flex items-center">
-                    <Lightbulb className="h-5 w-5 mr-2 text-primary" />
-                    Easily Solvable
-                  </h3>
-                  <div className="space-y-2">
-                    {trendAnalysis.feasibilityAnalysis.easySolutions?.map((item: string, idx: number) => (
-                      <div key={idx} className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg">
-                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs flex-shrink-0">
-                          {idx + 1}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Pros */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg flex items-center text-success">
+                      <CheckCircle2 className="h-5 w-5 mr-2" />
+                      Pros
+                    </h3>
+                    <div className="space-y-2">
+                      {trendAnalysis.feasibilityAnalysis.pros?.map((pro: string, idx: number) => (
+                        <div key={idx} className="flex items-start gap-2 p-3 bg-success/5 rounded-lg border border-success/20">
+                          <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                          <p className="text-sm">{pro}</p>
                         </div>
-                        <p className="text-sm pt-0.5">{item}</p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Cons */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg flex items-center text-destructive">
+                      <XCircle className="h-5 w-5 mr-2" />
+                      Challenges
+                    </h3>
+                    <div className="space-y-2">
+                      {trendAnalysis.feasibilityAnalysis.cons?.map((con: string, idx: number) => (
+                        <div key={idx} className="flex items-start gap-2 p-3 bg-destructive/5 rounded-lg border border-destructive/20">
+                          <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                          <p className="text-sm">{con}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 mb-8 bg-gradient-to-br from-purple-500/5 to-purple-600/5 border-2 border-purple-500/20">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-semibold flex items-center">
+                    <Lightbulb className="mr-3 h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    Actionable Insights
+                  </h2>
                 </div>
 
-                {/* Challenging Items */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-lg flex items-center">
-                    <AlertTriangle className="h-5 w-5 mr-2 text-accent" />
-                    More Challenging
-                  </h3>
-                  <div className="space-y-2">
-                    {trendAnalysis.feasibilityAnalysis.challenges?.map((item: string, idx: number) => (
-                      <div key={idx} className="flex items-start gap-2 p-3 bg-accent/5 rounded-lg">
-                        <div className="h-6 w-6 rounded-full bg-accent/10 flex items-center justify-center text-accent font-semibold text-xs flex-shrink-0">
-                          {idx + 1}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Easy Solutions */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg flex items-center">
+                      <Lightbulb className="h-5 w-5 mr-2 text-primary" />
+                      Easily Solvable
+                    </h3>
+                    <div className="space-y-2">
+                      {trendAnalysis.feasibilityAnalysis.easySolutions?.map((item: string, idx: number) => (
+                        <div key={idx} className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg">
+                          <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs flex-shrink-0">
+                            {idx + 1}
+                          </div>
+                          <p className="text-sm pt-0.5">{item}</p>
                         </div>
-                        <p className="text-sm pt-0.5">{item}</p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Challenging Items */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg flex items-center">
+                      <AlertTriangle className="h-5 w-5 mr-2 text-accent" />
+                      More Challenging
+                    </h3>
+                    <div className="space-y-2">
+                      {trendAnalysis.feasibilityAnalysis.challenges?.map((item: string, idx: number) => (
+                        <div key={idx} className="flex items-start gap-2 p-3 bg-accent/5 rounded-lg">
+                          <div className="h-6 w-6 rounded-full bg-accent/10 flex items-center justify-center text-accent font-semibold text-xs flex-shrink-0">
+                            {idx + 1}
+                          </div>
+                          <p className="text-sm pt-0.5">{item}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </>
           )}
 
-          {/* Actionable Insights */}
+          {/* Implementation Recommendations */}
           {trendAnalysis.actionableInsights && (
             <Card className="p-6 mb-8 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-semibold flex items-center">
                   <Wrench className="mr-3 h-6 w-6 text-primary" />
-                  Actionable Insights
+                  Implementation Recommendations
                 </h2>
                 <div className="text-right">
                   <p className="text-sm text-muted-foreground">Complexity Score</p>
