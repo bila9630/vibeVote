@@ -1194,6 +1194,10 @@ const Homepage = () => {
             
             setCurrentQuestion(nextQuestion || null);
           }}
+          onCancel={() => {
+            setShowWordCloud(false);
+            setCurrentQuestion(null);
+          }}
         />
       )}
       

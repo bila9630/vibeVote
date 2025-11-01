@@ -7,6 +7,16 @@ import ReactWordcloud from "react-wordcloud";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Generate or retrieve a persistent anonymous user ID
+const getAnonymousUserId = (): string => {
+  let userId = localStorage.getItem('anonymous_user_id');
+  if (!userId) {
+    userId = crypto.randomUUID();
+    localStorage.setItem('anonymous_user_id', userId);
+  }
+  return userId;
+};
+
 interface Keypoint {
   id: string;
   text: string;
@@ -18,12 +28,14 @@ interface WordCloudResultsProps {
   questionId: string;
   question: string;
   onClose: () => void;
+  onCancel: () => void;
 }
 
-export const WordCloudResults = ({ questionId, question, onClose }: WordCloudResultsProps) => {
+export const WordCloudResults = ({ questionId, question, onClose, onCancel }: WordCloudResultsProps) => {
   const [keypoints, setKeypoints] = useState<Keypoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedKeypoints, setLikedKeypoints] = useState<Set<string>>(new Set());
+  const anonymousUserId = getAnonymousUserId();
 
   useEffect(() => {
     loadKeypoints();
@@ -63,7 +75,7 @@ export const WordCloudResults = ({ questionId, question, onClose }: WordCloudRes
         .from('keypoint_likes')
         .delete()
         .eq('keypoint_id', keypointId)
-        .eq('user_id', 'anonymous'); // In a real app, use actual user ID
+        .eq('user_id', anonymousUserId);
 
       if (error) {
         console.error('Error unliking:', error);
@@ -90,7 +102,7 @@ export const WordCloudResults = ({ questionId, question, onClose }: WordCloudRes
         .from('keypoint_likes')
         .insert({
           keypoint_id: keypointId,
-          user_id: 'anonymous' // In a real app, use actual user ID
+          user_id: anonymousUserId
         });
 
       if (error) {
@@ -199,6 +211,13 @@ export const WordCloudResults = ({ questionId, question, onClose }: WordCloudRes
           )}
 
           <div className="flex gap-3 pt-4">
+            <Button 
+              variant="outline"
+              className="flex-1" 
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
             <Button className="flex-1" onClick={onClose}>
               Continue to Next Question
             </Button>
