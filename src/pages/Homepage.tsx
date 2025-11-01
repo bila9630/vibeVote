@@ -342,49 +342,27 @@ const Homepage = () => {
   };
 
   const renderQuestionModal = () => {
-    if (!currentQuestion) return null;
-
-    const isPlayMode = viewMode === "play";
+    if (!currentQuestion || viewMode === "play") return null;
 
     return (
       <div 
         className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
-        onClick={() => !isPlayMode && setCurrentQuestion(null)}
+        onClick={() => setCurrentQuestion(null)}
       >
         <Card 
           className="max-w-2xl w-full p-8 shadow-2xl animate-scale-in"
           onClick={(e) => e.stopPropagation()}
         >
-            <div className="space-y-6">
-              <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
-                  <Star className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div className="flex-1">
-                  <Badge className="mb-2">{currentQuestion.category}</Badge>
-                  <h2 className="text-2xl font-bold leading-tight">{currentQuestion.question}</h2>
-                </div>
-                {isPlayMode && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSkipQuestion}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      Skip
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleExitPlayMode}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      Exit
-                    </Button>
-                  </div>
-                )}
+          <div className="space-y-6">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
+                <Star className="h-5 w-5 text-primary-foreground" />
               </div>
+              <div className="flex-1">
+                <Badge className="mb-2">{currentQuestion.category}</Badge>
+                <h2 className="text-2xl font-bold leading-tight">{currentQuestion.question}</h2>
+              </div>
+            </div>
 
             {/* Render based on type */}
             {currentQuestion.type === "multiple-choice" && (
@@ -418,20 +396,20 @@ const Homepage = () => {
                     />
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1"
-                    onClick={() => handleAnswer(openAnswer)}
-                    disabled={!openAnswer.trim()}
-                  >
-                    Submit Answer
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  onClick={() => handleAnswer(openAnswer)}
+                  disabled={!openAnswer.trim()}
+                >
+                  Submit Answer
+                </Button>
+                {(
+                  <Button variant="outline" onClick={() => setCurrentQuestion(null)}>
+                    Cancel
                   </Button>
-                  {!isPlayMode && (
-                    <Button variant="outline" onClick={() => setCurrentQuestion(null)}>
-                      Cancel
-                    </Button>
-                  )}
-                </div>
+                )}
+              </div>
               </div>
             )}
 
@@ -453,15 +431,15 @@ const Homepage = () => {
                     className="rounded-full h-20 w-20 shadow-xl hover:scale-110 transition-transform"
                     onClick={() => handleSwipe("right")}
                   >
-                    <ThumbsUp className="h-8 w-8" />
-                  </Button>
-                </div>
-                {!isPlayMode && (
-                  <Button variant="outline" className="w-full" onClick={() => setCurrentQuestion(null)}>
-                    Cancel
-                  </Button>
-                )}
+                  <ThumbsUp className="h-8 w-8" />
+                </Button>
               </div>
+              {(
+                <Button variant="outline" className="w-full" onClick={() => setCurrentQuestion(null)}>
+                  Cancel
+                </Button>
+              )}
+            </div>
             )}
             
             {/* Ranking Game */}
@@ -494,6 +472,138 @@ const Homepage = () => {
           </div>
         </Card>
       </div>
+    );
+  };
+
+  const renderPlayModeQuestion = () => {
+    if (!currentQuestion || viewMode !== "play") return null;
+
+    return (
+      <Card className="p-8 shadow-2xl animate-scale-in border-2 border-primary/20">
+        <div className="space-y-6">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
+              <Star className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="flex-1">
+              <Badge className="mb-2">{currentQuestion.category}</Badge>
+              <h2 className="text-2xl font-bold leading-tight">{currentQuestion.question}</h2>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSkipQuestion}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Skip
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExitPlayMode}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Exit
+              </Button>
+            </div>
+          </div>
+
+          {/* Render based on type */}
+          {currentQuestion.type === "multiple-choice" && (
+            <div className="space-y-3">
+              {currentQuestion.options?.map((option, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  className="w-full h-auto py-4 text-left justify-start hover:bg-primary hover:text-primary-foreground transition-all"
+                  onClick={() => handleAnswer(option)}
+                >
+                  <span className="text-lg">{option}</span>
+                </Button>
+              ))}
+            </div>
+          )}
+
+          {currentQuestion.type === "open-ended" && (
+            <div className="space-y-4">
+              <div className="relative">
+                <Textarea
+                  placeholder="Share your thoughts..."
+                  value={openAnswer}
+                  onChange={(e) => setOpenAnswer(e.target.value)}
+                  className="min-h-[150px] text-base resize-none pr-14"
+                />
+                <div className="absolute bottom-3 right-3">
+                  <VoiceRecorder
+                    onTranscription={(text) => setOpenAnswer(prev => prev ? `${prev} ${text}` : text)}
+                    disabled={false}
+                  />
+                </div>
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => handleAnswer(openAnswer)}
+                disabled={!openAnswer.trim()}
+              >
+                Submit Answer
+              </Button>
+            </div>
+          )}
+
+          {currentQuestion.type === "yes-no" && (
+            <div className="space-y-6">
+              <p className="text-center text-muted-foreground">Choose your answer</p>
+              <div className="flex justify-center gap-8">
+                <Button
+                  size="lg"
+                  variant="destructive"
+                  className="rounded-full h-20 w-20 shadow-xl hover:scale-110 transition-transform"
+                  onClick={() => handleSwipe("left")}
+                >
+                  <ThumbsDown className="h-8 w-8" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="success"
+                  className="rounded-full h-20 w-20 shadow-xl hover:scale-110 transition-transform"
+                  onClick={() => handleSwipe("right")}
+                >
+                  <ThumbsUp className="h-8 w-8" />
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {/* Ranking Game */}
+          {currentQuestion.type === "ranking" && currentQuestion.rankingOptions && (
+            <RankingDragDrop
+              options={currentQuestion.rankingOptions}
+              onComplete={handleRankingComplete}
+              onCancel={handleExitPlayMode}
+              xpReward={currentQuestion.xpReward}
+            />
+          )}
+          
+          {/* Ideation Game */}
+          {currentQuestion.type === "ideation" && (
+            <IdeationQuestion
+              questionId={currentQuestion.id}
+              questionText={currentQuestion.question}
+              xpReward={currentQuestion.xpReward}
+              userProgress={userProgress}
+              setUserProgress={setUserProgress}
+              answeredQuestions={answeredQuestions}
+              setAnsweredQuestions={setAnsweredQuestions}
+              onClose={handleExitPlayMode}
+              onLevelUp={(rewards) => {
+                setNewRewards(rewards);
+                setShowLevelUp(true);
+              }}
+            />
+          )}
+        </div>
+      </Card>
     );
   };
 
@@ -623,52 +733,51 @@ const Homepage = () => {
                 </Card>
               ) : viewMode === "list" ? (
                 filteredQuestions.map((question, index) => (
-              <Card
-                key={question.id}
-                className="p-6 shadow-md hover:shadow-xl transition-all cursor-pointer animate-fade-in hover:scale-[1.02] border-2 border-transparent hover:border-primary/20"
-                style={{ animationDelay: `${index * 0.1}s` }}
-                onClick={() => handleStartQuestion(question)}
-              >
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="secondary">{question.category}</Badge>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {question.timeAgo}
-                        </span>
+                  <Card
+                    key={question.id}
+                    className="p-6 shadow-md hover:shadow-xl transition-all cursor-pointer animate-fade-in hover:scale-[1.02] border-2 border-transparent hover:border-primary/20"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                    onClick={() => handleStartQuestion(question)}
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="secondary">{question.category}</Badge>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {question.timeAgo}
+                            </span>
+                          </div>
+                          <h3 className="text-xl font-semibold mb-2">{question.question}</h3>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-primary">+{question.xpReward}</p>
+                          <p className="text-xs text-muted-foreground">XP</p>
+                        </div>
                       </div>
-                      <h3 className="text-xl font-semibold mb-2">{question.question}</h3>
+                      <div className="flex items-center justify-between pt-4 border-t border-border">
+                        <span className="text-sm text-muted-foreground capitalize">
+                          {question.type.replace("-", " ")} question
+                        </span>
+                        <Button size="sm" variant="ghost" className="group">
+                          Answer now
+                          <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">+{question.xpReward}</p>
-                      <p className="text-xs text-muted-foreground">XP</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <span className="text-sm text-muted-foreground capitalize">
-                      {question.type.replace("-", " ")} question
-                    </span>
-                    <Button size="sm" variant="ghost" className="group">
-                      Answer now
-                      <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </div>
-                  </div>
-                </Card>
-              ))
+                  </Card>
+                ))
               ) : (
-                <Card className="p-12 text-center space-y-4 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20">
-                  <Play className="h-16 w-16 mx-auto text-primary" />
-                  <h3 className="text-2xl font-bold">Play Mode Active</h3>
-                  <p className="text-muted-foreground">
-                    Questions will appear automatically. Answer or skip to continue!
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {filteredQuestions.length} question{filteredQuestions.length !== 1 ? 's' : ''} remaining
-                  </p>
-                </Card>
+                renderPlayModeQuestion() || (
+                  <Card className="p-12 text-center space-y-4 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20">
+                    <Play className="h-16 w-16 mx-auto text-primary" />
+                    <h3 className="text-2xl font-bold">Play Mode Active</h3>
+                    <p className="text-muted-foreground">
+                      All questions completed! 🎉
+                    </p>
+                  </Card>
+                )
               )}
           </TabsContent>
 
