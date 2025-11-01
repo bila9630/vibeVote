@@ -13,12 +13,14 @@ export function DailyStreakCard({ isMobile }: DailyStreakCardProps) {
     { day: 'Friday', short: 'Fri', completed: false }
   ];
 
+  const currentStreak = days.filter(d => d.completed).length;
+
   return (
     <Card className="p-6 mb-8 bg-gradient-to-br from-[#F59E0B] to-[#F97316] border-0 shadow-xl relative overflow-hidden">
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-1">Streak</h2>
+            <h2 className="text-2xl font-bold text-white mb-1">{currentStreak}-day Streak</h2>
             <p className="text-white/90 font-medium">Keep it going!</p>
           </div>
           <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">

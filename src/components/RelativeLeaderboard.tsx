@@ -185,7 +185,7 @@ export function RelativeLeaderboard({ isMobile }: RelativeLeaderboardProps) {
                     {/* Avatar */}
                     <Avatar className={`h-16 w-16 ${isMe ? 'ring-4 ring-primary shadow-xl scale-110' : 'ring-2 ring-border'} transition-all`}>
                       <AvatarFallback className={isMe ? 'bg-primary text-primary-foreground text-lg font-bold' : 'bg-muted'}>
-                        {user.username.substring(0, 2).toUpperCase()}
+                        {user.username.split(' ').map(n => n[0]).join('').toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     
