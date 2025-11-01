@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { Star, TrendingUp, Clock, ThumbsUp, ThumbsDown, ChevronRight, Trophy, BarChart3, Play, List } from "lucide-react";
+import { Star, TrendingUp, Clock, ThumbsUp, ThumbsDown, ChevronRight, Trophy, BarChart3, Play, List, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { WordCloudResults } from "@/components/WordCloudResults";
@@ -14,6 +14,7 @@ import { RankingDragDrop } from "@/components/RankingDragDrop";
 import { IdeationQuestion } from "@/components/IdeationQuestion";
 import { DailyStreakCard } from "@/components/DailyStreakCard";
 import { LevelUpModal } from "@/components/LevelUpModal";
+import { ProposeQuestionDialog } from "@/components/ProposeQuestionDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   UserProgress, 
@@ -81,6 +82,9 @@ const Homepage = () => {
   const [userProgress, setUserProgress] = useState<UserProgress>(loadProgress());
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newRewards, setNewRewards] = useState<LevelReward[]>([]);
+  
+  // Propose question dialog state
+  const [showProposeDialog, setShowProposeDialog] = useState(false);
   
   // Reload progress when component mounts or becomes visible
   useEffect(() => {
@@ -1275,6 +1279,22 @@ const Homepage = () => {
         userProgress={userProgress}
         newRewards={newRewards}
         onClose={() => setShowLevelUp(false)}
+      />
+
+      {/* Propose Question FAB */}
+      <Button
+        size="lg"
+        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 h-14 w-14 rounded-full shadow-2xl hover:shadow-accent/50 bg-gradient-to-br from-primary to-secondary hover:scale-110 transition-all z-40"
+        onClick={() => setShowProposeDialog(true)}
+        title="Propose a new question"
+      >
+        <Lightbulb className="h-6 w-6 text-primary-foreground" />
+      </Button>
+
+      {/* Propose Question Dialog */}
+      <ProposeQuestionDialog
+        open={showProposeDialog}
+        onOpenChange={setShowProposeDialog}
       />
     </div>
   );
