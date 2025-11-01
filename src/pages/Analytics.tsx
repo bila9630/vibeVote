@@ -5,6 +5,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { BarChart3, MessageSquare, ThumbsUp, ThumbsDown, TrendingUp, ArrowRight, Trophy } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 const questionsData = [
   {
@@ -90,6 +92,78 @@ const questionsData = [
 
 const Analytics = () => {
   const navigate = useNavigate();
+  const [realQuestion, setRealQuestion] = useState<any>(null);
+
+  useEffect(() => {
+    const loadRealQuestion = async () => {
+      const questionId = 'a5f7c5f5-2285-4ec8-8bf5-ffeade3eb5ce';
+      
+      // Fetch question details
+      const { data: questionData, error: questionError } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('id', questionId)
+        .single();
+
+      if (questionError) {
+        console.error('Error loading question:', questionError);
+        return;
+      }
+
+      // Fetch all responses for this question
+      const { data: responsesData, error: responsesError } = await supabase
+        .from('user_responses')
+        .select('*')
+        .eq('question_id', questionId);
+
+      if (responsesError) {
+        console.error('Error loading responses:', responsesError);
+        return;
+      }
+
+      // Aggregate responses by option
+      const options = (questionData.options as any)?.options || [];
+      const responseCounts: { [key: string]: number } = {};
+      
+      options.forEach((opt: string) => {
+        responseCounts[opt] = 0;
+      });
+
+      responsesData.forEach((response) => {
+        const option = response.selected_option;
+        if (option && responseCounts.hasOwnProperty(option)) {
+          responseCounts[option]++;
+        }
+      });
+
+      // Format for charts
+      const chartData = options.map((opt: string, idx: number) => ({
+        name: opt,
+        value: responseCounts[opt],
+        fill: idx === 0 ? "hsl(var(--success))" : 
+              idx === 1 ? "hsl(var(--primary))" : 
+              idx === 2 ? "hsl(var(--accent))" : 
+              "hsl(var(--destructive))"
+      }));
+
+      const totalResponses = responsesData.length;
+      const responseRate = totalResponses > 0 ? 100 : 0;
+
+      setRealQuestion({
+        id: questionData.id,
+        question: questionData.question_text,
+        type: questionData.question_type === 'multiple-choice' ? 'Multiple Choice' : 
+              questionData.question_type === 'yes-no' ? 'Yes/No' : 
+              questionData.question_type === 'open-ended' ? 'Open-ended' :
+              questionData.question_type === 'ranking' ? 'Ranking' : 'Ideation',
+        totalResponses,
+        responseRate,
+        responses: chartData,
+      });
+    };
+
+    loadRealQuestion();
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -101,6 +175,110 @@ const Analytics = () => {
 
       {/* Questions List */}
       <Accordion type="single" collapsible className="space-y-4">
+        {/* Real Question from Database */}
+        {realQuestion && (
+          <AccordionItem 
+            key={realQuestion.id} 
+            value={`question-${realQuestion.id}`}
+            className="border rounded-lg shadow-md bg-card animate-fade-in"
+          >
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-start justify-between w-full pr-4">
+                <div className="flex-1 text-left">
+                  <h3 className="text-lg font-semibold mb-2">{realQuestion.question}</h3>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Badge variant="outline">{realQuestion.type}</Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {realQuestion.totalResponses} responses
+                    </span>
+                    <span className="text-sm text-success flex items-center">
+                      <TrendingUp className="h-4 w-4 mr-1" />
+                      {realQuestion.responseRate}% response rate
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </AccordionTrigger>
+            
+            <AccordionContent className="px-6 pb-6">
+              {/* Analytics Content */}
+              <div className="grid lg:grid-cols-2 gap-6 pt-4">
+                {/* Chart Section */}
+                {(realQuestion.type === "Multiple Choice" || realQuestion.type === "Yes/No") && (
+                  <div>
+                    <h4 className="text-lg font-semibold mb-4 flex items-center">
+                      <BarChart3 className="mr-2 h-5 w-5 text-primary" />
+                      Response Distribution
+                    </h4>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <PieChart>
+                        <Pie
+                          data={realQuestion.responses}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          dataKey="value"
+                        >
+                          {realQuestion.responses.map((entry: any, idx: number) => (
+                            <Cell key={`cell-${idx}`} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: "hsl(var(--card))", 
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px"
+                          }} 
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* Stats/Details Section */}
+                {(realQuestion.type === "Multiple Choice" || realQuestion.type === "Yes/No") && realQuestion.totalResponses > 0 && (
+                  <div>
+                    <h4 className="text-lg font-semibold mb-4">Response Breakdown</h4>
+                    <div className="space-y-3">
+                      {realQuestion.responses?.map((response: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="h-3 w-3 rounded-full" 
+                              style={{ backgroundColor: response.fill }}
+                            />
+                            <span className="font-medium">{response.name}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-lg">{response.value}</span>
+                            <span className="text-muted-foreground text-sm ml-2">
+                              ({realQuestion.totalResponses > 0 ? ((response.value / realQuestion.totalResponses) * 100).toFixed(1) : 0}%)
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* More Info Button */}
+              <div className="mt-6 pt-6 border-t">
+                <Button 
+                  onClick={() => navigate(`/analytics/${realQuestion.id}`)}
+                  className="w-full"
+                >
+                  More Info
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        )}
+        
+        {/* Mock Questions */}
         {questionsData.map((question, index) => (
           <AccordionItem 
             key={question.id} 

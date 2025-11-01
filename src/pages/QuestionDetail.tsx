@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Heart, AlertTriangle, Sparkles, Wrench, Target, TrendingDown, TrendingUp, BarChart3, MessageSquare, ThumbsUp, ThumbsDown, Trophy } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import ReactWordcloud from "react-wordcloud";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 // This would typically come from a shared data file or API
 const questionsData = [
@@ -171,7 +173,83 @@ const questionsData = [
 const QuestionDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const question = questionsData.find((q) => q.id === Number(id));
+  const [realQuestion, setRealQuestion] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadQuestionDetail = async () => {
+      if (id === 'a5f7c5f5-2285-4ec8-8bf5-ffeade3eb5ce') {
+        // Fetch real question from database
+        const { data: questionData, error: questionError } = await supabase
+          .from('questions')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (questionError) {
+          console.error('Error loading question:', questionError);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch all responses
+        const { data: responsesData, error: responsesError } = await supabase
+          .from('user_responses')
+          .select('*')
+          .eq('question_id', id);
+
+        if (responsesError) {
+          console.error('Error loading responses:', responsesError);
+          setLoading(false);
+          return;
+        }
+
+        // Aggregate responses
+        const options = (questionData.options as any)?.options || [];
+        const responseCounts: { [key: string]: number } = {};
+        
+        options.forEach((opt: string) => {
+          responseCounts[opt] = 0;
+        });
+
+        responsesData.forEach((response) => {
+          const option = response.selected_option;
+          if (option && responseCounts.hasOwnProperty(option)) {
+            responseCounts[option]++;
+          }
+        });
+
+        const chartData = options.map((opt: string, idx: number) => ({
+          name: opt,
+          value: responseCounts[opt],
+          fill: idx === 0 ? "hsl(var(--success))" : 
+                idx === 1 ? "hsl(var(--primary))" : 
+                idx === 2 ? "hsl(var(--accent))" : 
+                "hsl(var(--destructive))"
+        }));
+
+        const totalResponses = responsesData.length;
+        const responseRate = totalResponses > 0 ? 100 : 0;
+
+        setRealQuestion({
+          id: questionData.id,
+          question: questionData.question_text,
+          type: questionData.question_type === 'multiple-choice' ? 'Multiple Choice' : 
+                questionData.question_type === 'yes-no' ? 'Yes/No' : 
+                'Open-ended',
+          totalResponses,
+          responseRate,
+          responses: chartData,
+        });
+      }
+      setLoading(false);
+    };
+
+    loadQuestionDetail();
+  }, [id]);
+
+  // Use real question if loaded, otherwise fall back to mock data
+  const question = realQuestion || questionsData.find((q) => q.id === Number(id));
 
   if (!question) {
     return (
