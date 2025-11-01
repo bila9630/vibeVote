@@ -120,48 +120,6 @@ const Trees = () => {
         </div>
       </Card>
 
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8 relative z-10">
-        <Card className="p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20 hover:shadow-xl transition-all hover:scale-105">
-          <div className="flex items-start justify-between mb-2">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-              <TreePine className="h-6 w-6 text-white" />
-            </div>
-            <Badge variant="secondary" className="bg-green-500/20 text-green-700 dark:text-green-300">
-              Total
-            </Badge>
-          </div>
-          <p className="text-3xl font-bold mb-1">{totalTreesPlanted}</p>
-          <p className="text-sm text-muted-foreground">Trees Planted</p>
-        </Card>
-
-        <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 hover:shadow-xl transition-all hover:scale-105">
-          <div className="flex items-start justify-between mb-2">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
-              <Leaf className="h-6 w-6 text-white" />
-            </div>
-            <Badge variant="secondary" className="bg-blue-500/20 text-blue-700 dark:text-blue-300">
-              Impact
-            </Badge>
-          </div>
-          <p className="text-3xl font-bold mb-1">{co2Offset} kg</p>
-          <p className="text-sm text-muted-foreground">CO₂ Offset per Year</p>
-        </Card>
-
-        <Card className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20 hover:shadow-xl transition-all hover:scale-105">
-          <div className="flex items-start justify-between mb-2">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-              <Users className="h-6 w-6 text-white" />
-            </div>
-            <Badge variant="secondary" className="bg-purple-500/20 text-purple-700 dark:text-purple-300">
-              Community
-            </Badge>
-          </div>
-          <p className="text-3xl font-bold mb-1">43</p>
-          <p className="text-sm text-muted-foreground">Contributors</p>
-        </Card>
-      </div>
-
       {/* Your Personal Impact */}
       <div className="mb-8 relative z-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
