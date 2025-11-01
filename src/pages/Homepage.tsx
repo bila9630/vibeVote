@@ -1100,6 +1100,77 @@ const Homepage = () => {
                       <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
                     </Button>
                   </CollapsibleTrigger>
+                  
+                  <CollapsibleContent className="absolute left-0 right-0 z-50 mt-3">
+                    <Card className="border-2 shadow-lg">
+                      <div className="p-4 space-y-4">
+                        <div className="flex justify-end">
+                          {hasActiveFilters && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleResetFilters}
+                              className="gap-2"
+                            >
+                              <X className="h-4 w-4" />
+                              Reset Filters
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Question Type Filter */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-muted-foreground">Question Type</label>
+                          <ToggleGroup 
+                            type="multiple" 
+                            value={selectedTypes}
+                            onValueChange={(value) => setSelectedTypes(value as QuestionType[])}
+                            className="justify-start flex-wrap"
+                          >
+                            <ToggleGroupItem value="ideation" className="gap-2">
+                              <Lightbulb className="h-4 w-4" />
+                              Ideation
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="yes-no" className="gap-2">
+                              <ThumbsUp className="h-4 w-4" />
+                              Yes/No
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="multiple-choice" className="gap-2">
+                              <List className="h-4 w-4" />
+                              Multiple Choice
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="open-ended" className="gap-2">
+                              <Star className="h-4 w-4" />
+                              Open-ended
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="ranking" className="gap-2">
+                              <Trophy className="h-4 w-4" />
+                              Ranking
+                            </ToggleGroupItem>
+                          </ToggleGroup>
+                        </div>
+
+                        {/* Category Filter */}
+                        {uniqueCategories.length > 0 && (
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-muted-foreground">Topic</label>
+                            <ToggleGroup 
+                              type="multiple" 
+                              value={selectedCategories}
+                              onValueChange={setSelectedCategories}
+                              className="justify-start flex-wrap"
+                            >
+                              {uniqueCategories.map((category) => (
+                                <ToggleGroupItem key={category} value={category}>
+                                  {category}
+                                </ToggleGroupItem>
+                              ))}
+                            </ToggleGroup>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </CollapsibleContent>
                 </Collapsible>
               )}
             </div>
@@ -1136,82 +1207,6 @@ const Homepage = () => {
               </Button>
             </div>
           </div>
-
-          {/* Filters Content - Only show in list view */}
-          {viewMode === "list" && (
-            <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-              <CollapsibleContent>
-                <Card className="mb-6 border-2">
-                  <div className="p-4 space-y-4">
-                    <div className="flex justify-end">
-                      {hasActiveFilters && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleResetFilters}
-                          className="gap-2"
-                        >
-                          <X className="h-4 w-4" />
-                          Reset Filters
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Question Type Filter */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">Question Type</label>
-                      <ToggleGroup 
-                        type="multiple" 
-                        value={selectedTypes}
-                        onValueChange={(value) => setSelectedTypes(value as QuestionType[])}
-                        className="justify-start flex-wrap"
-                      >
-                        <ToggleGroupItem value="ideation" className="gap-2">
-                          <Lightbulb className="h-4 w-4" />
-                          Ideation
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="yes-no" className="gap-2">
-                          <ThumbsUp className="h-4 w-4" />
-                          Yes/No
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="multiple-choice" className="gap-2">
-                          <List className="h-4 w-4" />
-                          Multiple Choice
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="open-ended" className="gap-2">
-                          <Star className="h-4 w-4" />
-                          Open-ended
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="ranking" className="gap-2">
-                          <Trophy className="h-4 w-4" />
-                          Ranking
-                        </ToggleGroupItem>
-                      </ToggleGroup>
-                    </div>
-
-                    {/* Category Filter */}
-                    {uniqueCategories.length > 0 && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted-foreground">Topic</label>
-                        <ToggleGroup 
-                          type="multiple" 
-                          value={selectedCategories}
-                          onValueChange={setSelectedCategories}
-                          className="justify-start flex-wrap"
-                        >
-                          {uniqueCategories.map((category) => (
-                            <ToggleGroupItem key={category} value={category}>
-                              {category}
-                            </ToggleGroupItem>
-                          ))}
-                        </ToggleGroup>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              </CollapsibleContent>
-            </Collapsible>
-          )}
 
           {/* Tabs Content */}
           <Tabs value={activeTab} className="space-y-6">
