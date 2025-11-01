@@ -3,29 +3,32 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Star, TrendingUp, Award, Calendar, Zap, Target, Crown } from "lucide-react";
+import { Trophy, Star, TrendingUp, Award, Calendar, Zap, Target, Crown, Lock } from "lucide-react";
+import { loadProgress, getUnlockedRewards, getLevelRewards, getXPForLevel } from "@/lib/xpSystem";
+import { useState, useEffect } from "react";
 
 const Profile = () => {
+  const [userProgress, setUserProgress] = useState(loadProgress());
+  
+  useEffect(() => {
+    setUserProgress(loadProgress());
+  }, []);
+
+  const unlockedRewards = getUnlockedRewards(userProgress.level);
+  const allRewards = getLevelRewards();
+  const xpToNextLevel = getXPForLevel(userProgress.level);
+
   const userStats = {
     name: "Jane Doe",
-    level: 5,
-    xp: 850,
-    xpToNextLevel: 1000,
+    level: userProgress.level,
+    xp: userProgress.currentXP,
+    xpToNextLevel: xpToNextLevel,
     totalResponses: 47,
     streak: 12,
-    achievements: 8,
+    achievements: unlockedRewards.length,
     rank: "#23",
     joinDate: "January 2025",
   };
-
-  const achievements = [
-    { id: 1, name: "Early Bird", description: "Completed 10 surveys", icon: Star, unlocked: true },
-    { id: 2, name: "Feedback Hero", description: "50 responses submitted", icon: Trophy, unlocked: true },
-    { id: 3, name: "Streak Master", description: "10 day participation streak", icon: Zap, unlocked: true },
-    { id: 4, name: "Top Contributor", description: "Top 25 in monthly rankings", icon: Crown, unlocked: true },
-    { id: 5, name: "Detail Oriented", description: "20 detailed open responses", icon: Target, unlocked: false },
-    { id: 6, name: "Team Player", description: "Participate for 3 months", icon: Award, unlocked: false },
-  ];
 
   const recentActivity = [
     { date: "Today", action: "Completed work-life balance survey", xp: 50 },
@@ -105,40 +108,55 @@ const Profile = () => {
 
         {/* Achievements Tab */}
         <TabsContent value="achievements" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            {achievements.map((achievement, index) => {
-              const Icon = achievement.icon;
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allRewards.map((reward, index) => {
+              const isUnlocked = reward.level <= userProgress.level;
+              
               return (
                 <Card
-                  key={achievement.id}
-                  className={`p-6 shadow-md transition-all animate-fade-in ${
-                    achievement.unlocked
-                      ? "border-primary/20 hover:shadow-lg hover:scale-105"
-                      : "opacity-60"
+                  key={reward.level}
+                  className={`p-6 shadow-lg transition-all animate-fade-in ${
+                    !isUnlocked ? "opacity-60" : "hover:scale-105 hover:shadow-xl"
                   }`}
-                  style={{ animationDelay: `${index * 0.05}s` }}
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`h-12 w-12 rounded-lg flex items-center justify-center ${
-                        achievement.unlocked
-                          ? "bg-gradient-to-br from-primary to-secondary"
-                          : "bg-muted"
-                      }`}
-                    >
-                      <Icon
-                        className={`h-6 w-6 ${
-                          achievement.unlocked ? "text-primary-foreground" : "text-muted-foreground"
-                        }`}
-                      />
+                  <div className="space-y-4">
+                    {/* Icon and Level */}
+                    <div className="flex items-start justify-between">
+                      <div className={`text-5xl ${
+                        isUnlocked ? "" : "grayscale opacity-50"
+                      }`}>
+                        {reward.icon}
+                      </div>
+                      <Badge variant={isUnlocked ? "default" : "secondary"} className="text-xs">
+                        Level {reward.level}
+                      </Badge>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold mb-1">{achievement.name}</h3>
-                      <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                      {achievement.unlocked && (
-                        <Badge variant="secondary" className="mt-2 text-xs">
-                          Unlocked
-                        </Badge>
+
+                    {/* Content */}
+                    <div>
+                      <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
+                        {reward.title}
+                        {!isUnlocked && <Lock className="h-4 w-4 text-muted-foreground" />}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {reward.description}
+                      </p>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="pt-3 border-t border-border">
+                      {isUnlocked ? (
+                        <div className="flex items-center gap-2 text-success">
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span className="font-semibold">Unlocked!</span>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">
+                          Unlock at Level {reward.level}
+                        </div>
                       )}
                     </div>
                   </div>

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Gift, Lock, TreePine, ArrowRight, Trophy, ShoppingBag, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { loadProgress, getUnlockedRewards, getLevelRewards } from "@/lib/xpSystem";
+import { loadProgress } from "@/lib/xpSystem";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -42,8 +42,6 @@ const Rewards = () => {
     }
   }, []);
 
-  const unlockedRewards = getUnlockedRewards(userProgress.level);
-  const allRewards = getLevelRewards();
   
   const handleRedeem = (item: ShopItem) => {
     if (userProgress.totalXP < item.cost) {
@@ -93,29 +91,29 @@ const Rewards = () => {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Achievements & Rewards</h1>
-        <p className="text-muted-foreground">Your progress and unlocked milestones</p>
+        <h1 className="text-4xl font-bold mb-2">Rewards Shop</h1>
+        <p className="text-muted-foreground">Redeem your XP for exciting rewards</p>
       </div>
 
       {/* Level and XP Card */}
       <Card className="p-6 mb-8 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 border-2 border-primary/20 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground mb-1">Current Progress</p>
+            <p className="text-sm text-muted-foreground mb-1">Your Balance</p>
             <p className="text-4xl font-bold mb-2 flex items-center gap-3">
               <Trophy className="h-10 w-10 text-primary" />
-              Level {userProgress.level}
+              {userProgress.totalXP} XP
             </p>
             <p className="text-lg text-muted-foreground">
-              {userProgress.totalXP} Total XP Earned
+              Available to spend
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-muted-foreground mb-1">Unlocked</p>
+            <p className="text-sm text-muted-foreground mb-1">Current Level</p>
             <p className="text-3xl font-bold text-primary">
-              {unlockedRewards.length} / {allRewards.length}
+              {userProgress.level}
             </p>
-            <p className="text-sm text-muted-foreground">Achievements</p>
+            <p className="text-sm text-muted-foreground">Keep leveling up!</p>
           </div>
         </div>
       </Card>
@@ -140,10 +138,10 @@ const Rewards = () => {
         </div>
       </Card>
 
-      {/* Rewards Shop */}
+      {/* Shop Items */}
       <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
         <ShoppingBag className="h-7 w-7 text-primary" />
-        Rewards Shop
+        Available Items
       </h2>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {shopItems.map((item, index) => {
@@ -212,64 +210,6 @@ const Rewards = () => {
         })}
       </div>
 
-      {/* Achievements Grid */}
-      <h2 className="text-2xl font-bold mb-4">Your Achievements</h2>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {allRewards.map((reward, index) => {
-          const isUnlocked = reward.level <= userProgress.level;
-          
-          return (
-            <Card
-              key={reward.level}
-              className={`p-6 shadow-lg transition-all animate-fade-in ${
-                !isUnlocked ? "opacity-60" : "hover:scale-105 hover:shadow-xl"
-              }`}
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className="space-y-4">
-                {/* Icon and Level */}
-                <div className="flex items-start justify-between">
-                  <div className={`text-5xl ${
-                    isUnlocked ? "" : "grayscale opacity-50"
-                  }`}>
-                    {reward.icon}
-                  </div>
-                  <Badge variant={isUnlocked ? "default" : "secondary"} className="text-xs">
-                    Level {reward.level}
-                  </Badge>
-                </div>
-
-                {/* Content */}
-                <div>
-                  <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
-                    {reward.title}
-                    {!isUnlocked && <Lock className="h-4 w-4 text-muted-foreground" />}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {reward.description}
-                  </p>
-                </div>
-
-                {/* Footer */}
-                <div className="pt-3 border-t border-border">
-                  {isUnlocked ? (
-                    <div className="flex items-center gap-2 text-success">
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="font-semibold">Unlocked!</span>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground">
-                      Unlock at Level {reward.level}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
 
       {/* Info Card */}
       <Card className="p-6 mt-8 bg-muted/50">
