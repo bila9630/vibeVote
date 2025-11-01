@@ -617,17 +617,9 @@ const QuestionDetail = () => {
                           </div>
                           <div className="space-y-2">
                             <p className="text-sm font-medium text-foreground leading-relaxed">{item}</p>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-1.5 bg-amber-200 dark:bg-amber-900 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"
-                                  style={{ width: `${Math.max(20, 100 - (idx * 15))}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-xs text-muted-foreground font-medium">
-                                {idx === 0 ? 'Medium' : idx === 1 ? 'High' : 'Very High'} Complexity
-                              </span>
-                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {idx === 0 ? 'Medium' : idx === 1 ? 'High' : 'Very High'} Complexity
+                            </Badge>
                           </div>
                         </div>
                       ))}
