@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { Star, TrendingUp, Clock, ThumbsUp, ThumbsDown, ChevronRight, Trophy, BarChart3, Play, List, Lightbulb } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Star, TrendingUp, Clock, ThumbsUp, ThumbsDown, ChevronRight, Trophy, BarChart3, Play, List, Lightbulb, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { WordCloudResults } from "@/components/WordCloudResults";
@@ -87,6 +88,10 @@ const Homepage = () => {
   const [viewMode, setViewMode] = useState<"list" | "play">("list");
   const [scrollToQuestionId, setScrollToQuestionId] = useState<string | null>(null);
   const questionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  
+  // Filter state
+  const [selectedTypes, setSelectedTypes] = useState<QuestionType[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   
   // Evaluation state
   const [evaluationResult, setEvaluationResult] = useState<{
@@ -965,11 +970,31 @@ const Homepage = () => {
     );
   };
 
+  // Get unique categories for filter
+  const uniqueCategories = Array.from(new Set(availableQuestions.map(q => q.category)));
+  
   const filteredQuestions = availableQuestions.filter((q) => {
-    if (activeTab === "new") return !answeredQuestions.includes(q.id);
-    if (activeTab === "completed") return answeredQuestions.includes(q.id);
-    return true;
+    // Tab filter
+    let tabMatch = true;
+    if (activeTab === "new") tabMatch = !answeredQuestions.includes(q.id);
+    if (activeTab === "completed") tabMatch = answeredQuestions.includes(q.id);
+    
+    // Type filter
+    const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(q.type);
+    
+    // Category filter
+    const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(q.category);
+    
+    return tabMatch && typeMatch && categoryMatch;
   });
+  
+  const hasActiveFilters = selectedTypes.length > 0 || selectedCategories.length > 0;
+  
+  const handleResetFilters = () => {
+    setSelectedTypes([]);
+    setSelectedCategories([]);
+    toast.success("Filters reset", { duration: 2000 });
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -1086,15 +1111,106 @@ const Homepage = () => {
             </div>
           </div>
 
+          {/* Filters Section */}
+          <Card className="p-4 mb-6 border-2">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Filters</h3>
+                  {hasActiveFilters && (
+                    <Badge variant="secondary" className="ml-2">
+                      {selectedTypes.length + selectedCategories.length} active
+                    </Badge>
+                  )}
+                </div>
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetFilters}
+                    className="gap-2"
+                  >
+                    <X className="h-4 w-4" />
+                    Reset
+                  </Button>
+                )}
+              </div>
+
+              {/* Question Type Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Question Type</label>
+                <ToggleGroup 
+                  type="multiple" 
+                  value={selectedTypes}
+                  onValueChange={(value) => setSelectedTypes(value as QuestionType[])}
+                  className="justify-start flex-wrap"
+                >
+                  <ToggleGroupItem value="ideation" className="gap-2">
+                    <Lightbulb className="h-4 w-4" />
+                    Ideation
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="yes-no" className="gap-2">
+                    <ThumbsUp className="h-4 w-4" />
+                    Yes/No
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="multiple-choice" className="gap-2">
+                    <List className="h-4 w-4" />
+                    Multiple Choice
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="open-ended" className="gap-2">
+                    <Star className="h-4 w-4" />
+                    Open-ended
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="ranking" className="gap-2">
+                    <Trophy className="h-4 w-4" />
+                    Ranking
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+
+              {/* Category Filter */}
+              {uniqueCategories.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Topic</label>
+                  <ToggleGroup 
+                    type="multiple" 
+                    value={selectedCategories}
+                    onValueChange={setSelectedCategories}
+                    className="justify-start flex-wrap"
+                  >
+                    {uniqueCategories.map((category) => (
+                      <ToggleGroupItem key={category} value={category}>
+                        {category}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </div>
+              )}
+            </div>
+          </Card>
+
           {/* Tabs Content */}
           <Tabs value={activeTab} className="space-y-6">
 
             <TabsContent value="new" className="space-y-4">
               {filteredQuestions.length === 0 ? (
                 <Card className="p-12 text-center">
-                  <Star className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl font-bold mb-2">All caught up! 🎉</h3>
-                  <p className="text-muted-foreground">Check back later for new questions</p>
+                  <Filter className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-xl font-bold mb-2">
+                    {hasActiveFilters ? "No questions match your filters" : "All caught up! 🎉"}
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    {hasActiveFilters 
+                      ? "Try adjusting your filters to see more questions" 
+                      : "Check back later for new questions"}
+                  </p>
+                  {hasActiveFilters && (
+                    <Button onClick={handleResetFilters} className="gap-2">
+                      <X className="h-4 w-4" />
+                      Reset Filters
+                    </Button>
+                  )}
                 </Card>
               ) : viewMode === "list" ? (
                 filteredQuestions.map((question, index) => (
