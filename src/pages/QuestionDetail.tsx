@@ -178,10 +178,17 @@ const QuestionDetail = () => {
             .map(r => r.response_text);
           
           try {
+            // Fetch keypoints with likes to weight the analysis
+            const { data: keypointsData } = await supabase
+              .from('response_keypoints')
+              .select('text, likes')
+              .eq('question_id', id);
+            
             const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-trends', {
               body: {
                 question: questionData.question_text,
-                responses: openEndedResponses
+                responses: openEndedResponses,
+                keypoints: keypointsData || []
               }
             });
             

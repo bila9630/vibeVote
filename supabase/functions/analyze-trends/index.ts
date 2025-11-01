@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { question, responses } = await req.json();
+    const { question, responses, keypoints } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -29,15 +29,25 @@ serve(async (req) => {
       );
     }
 
+    // Build keypoint context for the AI
+    let keypointContext = "";
+    if (keypoints && keypoints.length > 0) {
+      const sortedKeypoints = keypoints.sort((a: any, b: any) => b.likes - a.likes);
+      keypointContext = `\n\nExisting keypoints with community engagement (likes indicate importance):\n${
+        sortedKeypoints.map((kp: any) => `- "${kp.text}" (${kp.likes} likes)`).join('\n')
+      }\n\nGive higher weight to themes that align with highly-liked keypoints.`;
+    }
+
     const analysisPrompt = `Analyze these responses to the question: "${question}"
 
 All responses:
-${responses.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}
+${responses.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}${keypointContext}
 
 Your task:
 1. Identify the dominant underlying trends/themes (e.g., health benefits vs gifts, time-saving vs comfort)
 2. Group responses into 2-4 major themes with percentages
-3. Provide a feasibility analysis for implementing these suggestions:
+3. Give HIGHER WEIGHT to themes that align with keypoints that have more likes (community validation)
+4. Provide a feasibility analysis for implementing these suggestions:
    - Pros (2-3 points)
    - Cons/Challenges (2-3 points)  
    - Easy to solve items (2-3 specific items)
