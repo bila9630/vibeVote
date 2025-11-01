@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 type QuestionType = "multiple-choice" | "open-ended" | "yes-no" | "ranking" | "ideation";
 
 interface Question {
-  id: number;
+  id: string;
   type: QuestionType;
   question: string;
   options?: string[];
@@ -25,80 +25,15 @@ interface Question {
   timeAgo: string;
 }
 
-const availableQuestions: Question[] = [
-  {
-    id: 1,
-    type: "multiple-choice",
-    question: "How would you rate your work-life balance this week?",
-    options: ["Excellent", "Good", "Fair", "Needs Improvement"],
-    category: "Wellness",
-    xpReward: 50,
-    timeAgo: "2h ago",
-  },
-  {
-    id: 2,
-    type: "yes-no",
-    question: "Do you feel your contributions are valued by the team?",
-    category: "Team Culture",
-    xpReward: 50,
-    timeAgo: "5h ago",
-  },
-  {
-    id: 3,
-    type: "open-ended",
-    question: "What's one thing we could improve to make your work experience better?",
-    category: "Feedback",
-    xpReward: 75,
-    timeAgo: "1d ago",
-  },
-  {
-    id: 4,
-    type: "multiple-choice",
-    question: "How clear are your current project goals?",
-    options: ["Very Clear", "Mostly Clear", "Somewhat Clear", "Not Clear"],
-    category: "Projects",
-    xpReward: 50,
-    timeAgo: "1d ago",
-  },
-  {
-    id: 5,
-    type: "yes-no",
-    question: "Would you recommend our company as a great place to work?",
-    category: "Culture",
-    xpReward: 50,
-    timeAgo: "2d ago",
-  },
-  {
-    id: 6,
-    type: "ranking",
-    question: "What's your favorite food in the canteen?",
-    rankingOptions: [
-      { name: "Croissants", emoji: "🥐", wins: 0 },
-      { name: "Muffins", emoji: "🧁", wins: 0 },
-      { name: "Cookies", emoji: "🍪", wins: 0 },
-      { name: "Macarons", emoji: "🍬", wins: 0 },
-      { name: "Donuts", emoji: "🍩", wins: 0 },
-    ],
-    category: "Canteen",
-    xpReward: 100,
-    timeAgo: "3h ago",
-  },
-  {
-    id: 7,
-    type: "ideation",
-    question: "Which benefits should Endres offer?",
-    category: "Innovation",
-    xpReward: 100,
-    timeAgo: "1h ago",
-  },
-];
+// Questions are now loaded from the database
 
 const Homepage = () => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("new");
-  const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
+  const [answeredQuestions, setAnsweredQuestions] = useState<string[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [openAnswer, setOpenAnswer] = useState("");
+  const [availableQuestions, setAvailableQuestions] = useState<Question[]>([]);
   const ideationInputRef = useRef<HTMLInputElement>(null);
   
   // Ranking game state
@@ -122,6 +57,52 @@ const Homepage = () => {
   const [ideationComplete, setIdeationComplete] = useState(false);
   const [horseSpeed, setHorseSpeed] = useState(0);
 
+  // Load questions from database
+  useEffect(() => {
+    const loadQuestions = async () => {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading questions:', error);
+        toast.error('Failed to load questions');
+        return;
+      }
+
+      if (data) {
+        const formattedQuestions: Question[] = data.map((q) => {
+          const options = q.options as any;
+          const timeDiff = Date.now() - new Date(q.created_at).getTime();
+          const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));
+          const daysAgo = Math.floor(hoursAgo / 24);
+          
+          let timeAgo = '';
+          if (daysAgo > 0) {
+            timeAgo = `${daysAgo}d ago`;
+          } else {
+            timeAgo = `${hoursAgo}h ago`;
+          }
+
+          return {
+            id: q.id,
+            type: q.question_type as QuestionType,
+            question: q.question_text,
+            options: options?.options,
+            rankingOptions: options?.rankingOptions,
+            category: q.category,
+            xpReward: q.xp_reward,
+            timeAgo,
+          };
+        });
+        setAvailableQuestions(formattedQuestions);
+      }
+    };
+
+    loadQuestions();
+  }, []);
+
   const handleStartQuestion = (question: Question) => {
     setCurrentQuestion(question);
   };
@@ -135,7 +116,7 @@ const Homepage = () => {
           .from('user_responses')
           .insert({
             user_id: user.id,
-            question_id: currentQuestion.id.toString(),
+            question_id: currentQuestion.id,
             selected_option: currentQuestion.type === 'multiple-choice' || currentQuestion.type === 'yes-no' ? answer : null,
             response_text: currentQuestion.type === 'open-ended' ? answer : null,
           });
@@ -234,7 +215,7 @@ const Homepage = () => {
           .from('user_responses')
           .insert({
             user_id: user.id,
-            question_id: currentQuestion.id.toString(),
+            question_id: currentQuestion.id,
             response_text: rankingResult,
           });
 
@@ -347,7 +328,7 @@ const Homepage = () => {
           .from('user_responses')
           .insert({
             user_id: user.id,
-            question_id: currentQuestion.id.toString(),
+            question_id: currentQuestion.id,
             response_text: ideationIdeas.join(', '),
           });
 
