@@ -109,6 +109,31 @@ const Homepage = () => {
 
   const handleAnswer = async (answer: string) => {
     if (currentQuestion) {
+      // Evaluate response with AI for open-ended questions
+      let earnedXP = currentQuestion.xpReward;
+      let evaluationReason = "Answer submitted successfully!";
+      
+      if (currentQuestion.type === 'open-ended') {
+        try {
+          const { data: evalData, error: evalError } = await supabase.functions.invoke('evaluate-response', {
+            body: {
+              question: currentQuestion.question,
+              answer: answer,
+              questionType: currentQuestion.type
+            }
+          });
+
+          if (evalError) {
+            console.error('Error evaluating response:', evalError);
+          } else if (evalData) {
+            earnedXP = evalData.xp;
+            evaluationReason = evalData.reason;
+          }
+        } catch (error) {
+          console.error('Error calling evaluation function:', error);
+        }
+      }
+
       // Save response to database
       const { error } = await supabase
         .from('user_responses')
@@ -124,8 +149,8 @@ const Homepage = () => {
         return;
       }
 
-      toast.success(`+${currentQuestion.xpReward} XP!`, {
-        description: "Answer submitted successfully!",
+      toast.success(`+${earnedXP} XP!`, {
+        description: evaluationReason,
         icon: <Star className="h-4 w-4 text-accent" />,
       });
       
@@ -341,6 +366,31 @@ const Homepage = () => {
   
   const completeIdeationGame = async () => {
     if (currentQuestion) {
+      // Evaluate ideation ideas with AI
+      let earnedXP = currentQuestion.xpReward;
+      let evaluationReason = `${ideationIdeas.length} ideas generated!`;
+      
+      if (ideationIdeas.length > 0) {
+        try {
+          const { data: evalData, error: evalError } = await supabase.functions.invoke('evaluate-response', {
+            body: {
+              question: currentQuestion.question,
+              answer: ideationIdeas.join(', '),
+              questionType: 'ideation'
+            }
+          });
+
+          if (evalError) {
+            console.error('Error evaluating ideation response:', evalError);
+          } else if (evalData) {
+            earnedXP = evalData.xp;
+            evaluationReason = evalData.reason;
+          }
+        } catch (error) {
+          console.error('Error calling evaluation function:', error);
+        }
+      }
+
       // Save all ideas to database
       const { error } = await supabase
         .from('user_responses')
@@ -355,9 +405,9 @@ const Homepage = () => {
         return;
       }
 
-      const totalXP = currentQuestion.xpReward + ideationScore;
+      const totalXP = earnedXP + ideationScore;
       toast.success(`+${totalXP} XP!`, {
-        description: `${ideationIdeas.length} ideas generated!`,
+        description: evaluationReason,
         icon: <Lightbulb className="h-4 w-4 text-accent" />,
       });
       
