@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Star, TrendingUp, Clock, ThumbsUp, ThumbsDown, ChevronRight, Flame } from "lucide-react";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type QuestionType = "multiple-choice" | "open-ended" | "yes-no";
 
@@ -65,6 +66,7 @@ const availableQuestions: Question[] = [
 ];
 
 const Homepage = () => {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("new");
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
@@ -206,7 +208,7 @@ const Homepage = () => {
         <div className="relative z-10">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-1">7-day streak</h2>
+              <h2 className="text-2xl font-bold text-white mb-1">{isMobile ? '5' : '7'}-day streak</h2>
               <p className="text-white/90 font-medium">Keep it going!</p>
             </div>
             <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -216,7 +218,7 @@ const Homepage = () => {
 
           {/* Days of Week */}
           <div className="flex items-center justify-between mb-4">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+            {(isMobile ? ['W', 'T', 'F', 'S', 'S'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S']).map((day, index) => (
               <div key={index} className="text-center">
                 <p className="text-white/70 text-sm font-medium mb-3">{day}</p>
               </div>
@@ -231,11 +233,11 @@ const Homepage = () => {
             
             {/* Progress Line */}
             <div className="absolute top-1/2 left-0 h-1 bg-white -translate-y-1/2" 
-                 style={{ left: '5%', width: '77%' }} />
+                 style={{ left: '5%', width: isMobile ? '72%' : '77%' }} />
 
             {/* Day Circles */}
             <div className="flex items-center justify-between relative">
-              {[true, true, true, true, true, true, false].map((completed, index) => (
+              {(isMobile ? [true, true, true, true, false] : [true, true, true, true, true, true, false]).map((completed, index) => (
                 <div
                   key={index}
                   className={`h-10 w-10 rounded-full flex items-center justify-center transition-all ${
