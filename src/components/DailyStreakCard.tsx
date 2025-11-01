@@ -6,11 +6,11 @@ interface DailyStreakCardProps {
 }
 
 export function DailyStreakCard({ isMobile }: DailyStreakCardProps) {
-  // Always show 3 consecutive days
+  // Always show 3 consecutive days with full names
   const days = [
-    { day: 'W', completed: true }, 
-    { day: 'T', completed: true }, 
-    { day: 'F', completed: false }
+    { day: 'Wednesday', short: 'Wed', completed: true }, 
+    { day: 'Thursday', short: 'Thu', completed: true }, 
+    { day: 'Friday', short: 'Fri', completed: false }
   ];
 
   return (
@@ -27,22 +27,24 @@ export function DailyStreakCard({ isMobile }: DailyStreakCardProps) {
         </div>
 
         {/* Streak Progress */}
-        <div className="relative">
+        <div className="relative px-2">
           {/* Connection Line */}
-          <div className="absolute top-[calc(50%+12px)] left-0 right-0 h-1 bg-white/30" 
-               style={{ left: '10%', right: '10%', width: '80%' }} />
+          <div className="absolute top-[calc(50%+16px)] left-0 right-0 h-1 bg-white/30" 
+               style={{ left: '15%', right: '15%', width: '70%' }} />
           
           {/* Progress Line */}
-          <div className="absolute top-[calc(50%+12px)] left-0 h-1 bg-white" 
-               style={{ left: '10%', width: '47%' }} />
+          <div className="absolute top-[calc(50%+16px)] left-0 h-1 bg-white" 
+               style={{ left: '15%', width: '35%' }} />
 
           {/* Days with Circles */}
-          <div className="flex items-center justify-between relative">
+          <div className="flex items-center justify-around relative">
             {days.map((item, index) => (
-              <div key={index} className="flex flex-col items-center gap-3">
-                <p className="text-white/70 text-sm font-medium">{item.day}</p>
+              <div key={index} className="flex flex-col items-center gap-3 flex-1">
+                <p className="text-white/80 text-sm font-semibold">
+                  {isMobile ? item.short : item.day}
+                </p>
                 <div
-                  className={`h-10 w-10 rounded-full flex items-center justify-center transition-all ${
+                  className={`h-12 w-12 rounded-full flex items-center justify-center transition-all ${
                     item.completed
                       ? 'bg-white shadow-lg'
                       : 'bg-white/30 backdrop-blur-sm border-2 border-white'
@@ -50,7 +52,7 @@ export function DailyStreakCard({ isMobile }: DailyStreakCardProps) {
                 >
                   {item.completed && (
                     <svg
-                      className="h-5 w-5 text-[#F59E0B]"
+                      className="h-6 w-6 text-[#F59E0B]"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"

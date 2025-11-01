@@ -128,46 +128,46 @@ export function RelativeLeaderboard({ isMobile }: RelativeLeaderboardProps) {
           </div>
         </div>
 
-        {/* Ranking Timeline */}
-        <div className="relative">
-          {/* Connection Line */}
-          <div className="absolute top-[calc(50%+12px)] left-0 right-0 h-1 bg-border" 
-               style={{ left: '10%', right: '10%', width: '80%' }} />
-
-          {/* Users positioned like streak */}
-          <div className="flex items-center justify-between relative">
+        {/* Vertical Ranking */}
+        <div className="relative flex justify-center">
+          <div className="flex flex-col items-center gap-4">
             {users.map((user, index) => {
-              const isCurrentUser = index === currentUserIndex;
               const savedProgress = localStorage.getItem('userProgress');
               const currentUsername = savedProgress ? JSON.parse(savedProgress).username || 'You' : 'You';
               const isMe = user.username === currentUsername;
               
               return (
-                <div key={user.id} className="flex flex-col items-center gap-3">
-                  {/* Position indicator */}
-                  <div className="flex items-center gap-1">
-                    {index === 0 && <ChevronUp className="h-4 w-4 text-primary" />}
-                    <p className={`text-sm font-bold ${isMe ? 'text-primary' : 'text-muted-foreground'}`}>
-                      #{user.position}
-                    </p>
-                    {index === users.length - 1 && <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                  </div>
+                <div key={user.id} className="relative">
+                  {/* Connection Line between users */}
+                  {index < users.length - 1 && (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0.5 h-4 bg-border" />
+                  )}
                   
-                  {/* Avatar */}
-                  <div className="relative">
-                    <Avatar className={`h-14 w-14 ${isMe ? 'ring-4 ring-primary shadow-lg' : 'ring-2 ring-border'} transition-all`}>
-                      <AvatarFallback className={isMe ? 'bg-primary text-primary-foreground' : 'bg-muted'}>
+                  <div className="flex items-center gap-4">
+                    {/* Position indicator on left */}
+                    <div className="flex items-center gap-1 w-16 justify-end">
+                      {index === 0 && <ChevronUp className="h-4 w-4 text-primary" />}
+                      <p className={`text-sm font-bold ${isMe ? 'text-primary' : 'text-muted-foreground'}`}>
+                        #{user.position}
+                      </p>
+                      {index === users.length - 1 && <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                    </div>
+                    
+                    {/* Avatar */}
+                    <Avatar className={`h-16 w-16 ${isMe ? 'ring-4 ring-primary shadow-lg scale-110' : 'ring-2 ring-border'} transition-all`}>
+                      <AvatarFallback className={isMe ? 'bg-primary text-primary-foreground text-lg' : 'bg-muted'}>
                         {user.username.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                  </div>
-                  
-                  {/* Username and level */}
-                  <div className="text-center">
-                    <p className={`text-xs font-bold ${isMe ? 'text-primary' : 'text-foreground'}`}>
-                      {isMe ? 'You' : user.username}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Lvl {user.level}</p>
+                    
+                    {/* Username and level on right */}
+                    <div className="w-24">
+                      <p className={`text-sm font-bold ${isMe ? 'text-primary' : 'text-foreground'}`}>
+                        {isMe ? 'You' : user.username}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Level {user.level}</p>
+                      <p className="text-xs text-muted-foreground">{user.total_xp} XP</p>
+                    </div>
                   </div>
                 </div>
               );
