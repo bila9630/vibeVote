@@ -5,63 +5,28 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-interface TreePlanting {
-  id: number;
-  location: string;
-  date: string;
-  treeCount: number;
-  species: string;
-  contributor: string;
+interface UserImpact {
+  treesPlanted: number;
+  co2Saved: number;
+  rank: string;
+  nextMilestone: number;
+  contributionPercentage: number;
 }
-
-const treePlantings: TreePlanting[] = [
-  {
-    id: 1,
-    location: "Amazon Rainforest, Brazil",
-    date: "2024-10-15",
-    treeCount: 25,
-    species: "Brazil Nut Trees",
-    contributor: "Sarah M.",
-  },
-  {
-    id: 2,
-    location: "Pacific Northwest, USA",
-    date: "2024-10-10",
-    treeCount: 18,
-    species: "Douglas Fir",
-    contributor: "John D.",
-  },
-  {
-    id: 3,
-    location: "Madagascar Forest",
-    date: "2024-10-05",
-    treeCount: 32,
-    species: "Baobab Trees",
-    contributor: "Maria L.",
-  },
-  {
-    id: 4,
-    location: "Scottish Highlands, UK",
-    date: "2024-09-28",
-    treeCount: 22,
-    species: "Scots Pine",
-    contributor: "David R.",
-  },
-  {
-    id: 5,
-    location: "Sahel Region, Africa",
-    date: "2024-09-20",
-    treeCount: 30,
-    species: "Acacia Trees",
-    contributor: "Team Effort",
-  },
-];
 
 const Trees = () => {
   const navigate = useNavigate();
   const totalTreesPlanted = 127;
   const co2Offset = (totalTreesPlanted * 22).toFixed(0);
   const [visibleTrees, setVisibleTrees] = useState(0);
+  
+  // User's personal impact (mock data - will be connected to auth later)
+  const userImpact: UserImpact = {
+    treesPlanted: 8,
+    co2Saved: 8 * 22,
+    rank: "Forest Guardian",
+    nextMilestone: 10,
+    contributionPercentage: (8 / totalTreesPlanted) * 100,
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -197,58 +162,88 @@ const Trees = () => {
         </Card>
       </div>
 
-      {/* Recent Plantings */}
+      {/* Your Personal Impact */}
       <div className="mb-8 relative z-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <TreePine className="h-6 w-6 text-green-600 dark:text-green-400" />
-          Recent Tree Plantings
+          <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+          Your Environmental Impact
         </h2>
-        <div className="space-y-4">
-          {treePlantings.map((planting, index) => (
-            <Card 
-              key={planting.id}
-              className="p-6 hover:shadow-lg transition-all animate-fade-in"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0">
-                      <TreePine className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold mb-1">{planting.treeCount} Trees</h3>
-                      <p className="text-sm text-muted-foreground">{planting.species}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{planting.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{new Date(planting.date).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>Contributed by {planting.contributor}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <Badge variant="secondary" className="self-start md:self-center bg-green-500/20 text-green-700 dark:text-green-300">
-                  {(planting.treeCount * 22).toFixed(0)} kg CO₂/year
+
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
+          {/* Your Trees Card */}
+          <Card className="p-6 bg-gradient-to-br from-green-500/10 via-emerald-500/10 to-teal-500/10 border-2 border-green-500/30">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Trees You've Planted</p>
+                <p className="text-5xl font-bold text-green-600 dark:text-green-400 mb-2">
+                  {userImpact.treesPlanted}
+                </p>
+                <Badge variant="secondary" className="bg-green-500/20 text-green-700 dark:text-green-300">
+                  {userImpact.rank}
                 </Badge>
               </div>
-            </Card>
-          ))}
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center animate-pulse">
+                <TreePine className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Next milestone</span>
+                <span className="font-semibold">{userImpact.nextMilestone} trees</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 h-full transition-all duration-1000"
+                  style={{ width: `${(userImpact.treesPlanted / userImpact.nextMilestone) * 100}%` }}
+                />
+              </div>
+            </div>
+          </Card>
+
+          {/* Your CO2 Impact Card */}
+          <Card className="p-6 bg-gradient-to-br from-blue-500/10 via-cyan-500/10 to-teal-500/10 border-2 border-blue-500/30">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">CO₂ You're Offsetting</p>
+                <p className="text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                  {userImpact.co2Saved}
+                </p>
+                <p className="text-sm text-muted-foreground">kg per year</p>
+              </div>
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center animate-pulse" style={{ animationDuration: "3s" }}>
+                <Leaf className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            
+            <div className="pt-3 border-t border-border">
+              <p className="text-sm text-muted-foreground">
+                That's equivalent to <span className="font-bold text-foreground">{Math.round(userImpact.co2Saved / 2.3)}</span> miles of driving offset!
+              </p>
+            </div>
+          </Card>
         </div>
+
+        {/* Community Contribution */}
+        <Card className="p-6 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-orange-500/10 border-2 border-purple-500/20">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0">
+              <Users className="h-8 w-8 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold mb-2">Community Contribution</h3>
+              <p className="text-muted-foreground mb-3">
+                You're responsible for <span className="font-bold text-purple-600 dark:text-purple-400">{userImpact.contributionPercentage.toFixed(1)}%</span> of our forest!
+              </p>
+              <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 h-full transition-all duration-1000"
+                  style={{ width: `${userImpact.contributionPercentage}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Info Card */}
