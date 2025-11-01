@@ -224,9 +224,9 @@ const Analytics = () => {
                         <span className="text-sm text-muted-foreground">
                           {realQuestion.totalResponses}/80 responses
                         </span>
-                        <span className={`text-sm flex items-center ${
+                        <span className={`text-sm flex items-center font-medium ${
                           realQuestion.responseRate > 85 ? 'text-success' : 
-                          realQuestion.responseRate >= 50 ? 'text-warning' : 
+                          realQuestion.responseRate >= 50 ? 'text-accent' : 
                           'text-destructive'
                         }`}>
                           <TrendingUp className="h-4 w-4 mr-1" />
@@ -351,9 +351,9 @@ const Analytics = () => {
                         <span className="text-sm text-muted-foreground">
                           {realQuestion.totalResponses}/80 responses
                         </span>
-                        <span className={`text-sm flex items-center ${
+                        <span className={`text-sm flex items-center font-medium ${
                           realQuestion.responseRate > 85 ? 'text-success' : 
-                          realQuestion.responseRate >= 50 ? 'text-warning' : 
+                          realQuestion.responseRate >= 50 ? 'text-accent' : 
                           'text-destructive'
                         }`}>
                           <TrendingUp className="h-4 w-4 mr-1" />
