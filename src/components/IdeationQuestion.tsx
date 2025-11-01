@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Clock, Zap, AlertTriangle, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { HorseRaceAnimation } from "@/components/HorseRaceAnimation";
+import { WordCloudResults } from "@/components/WordCloudResults";
 import { supabase } from "@/integrations/supabase/client";
 import { UserProgress, addXP, saveProgress } from "@/lib/xpSystem";
 
@@ -44,6 +45,7 @@ export function IdeationQuestion({
   const [showCoolingWarning, setShowCoolingWarning] = useState(false);
   const [ideationComplete, setIdeationComplete] = useState(false);
   const [horseSpeed, setHorseSpeed] = useState(0);
+  const [showWordCloud, setShowWordCloud] = useState(false);
 
   const startIdeationGame = () => {
     setIdeationStarted(true);
@@ -211,9 +213,23 @@ export function IdeationQuestion({
     }
     
     setAnsweredQuestions([...answeredQuestions, questionId]);
-    onClose();
+    
+    // Show word cloud results instead of closing immediately
+    setShowWordCloud(true);
+  };
+
+  const handleWordCloudClose = () => {
+    setShowWordCloud(false);
     setIdeationStarted(false);
     setIdeationComplete(false);
+    onClose();
+  };
+
+  const handleWordCloudCancel = () => {
+    setShowWordCloud(false);
+    setIdeationStarted(false);
+    setIdeationComplete(false);
+    onClose();
   };
   
   // Timer and idle detection for ideation game
@@ -346,6 +362,18 @@ export function IdeationQuestion({
           ))}
         </div>
       </div>
+    );
+  }
+
+  // Show word cloud results after completion
+  if (showWordCloud) {
+    return (
+      <WordCloudResults
+        questionId={questionId}
+        question={questionText}
+        onClose={handleWordCloudClose}
+        onCancel={handleWordCloudCancel}
+      />
     );
   }
 
