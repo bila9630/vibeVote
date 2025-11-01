@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BarChart3, MessageSquare, ThumbsUp, ThumbsDown, TrendingUp, ArrowRight } from "lucide-react";
+import { BarChart3, MessageSquare, ThumbsUp, ThumbsDown, TrendingUp, ArrowRight, Trophy } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { useNavigate } from "react-router-dom";
 
@@ -70,6 +70,20 @@ const questionsData = [
     responses: [
       { name: "Yes", value: 289, fill: "hsl(var(--success))" },
       { name: "No", value: 52, fill: "hsl(var(--destructive))" },
+    ],
+  },
+  {
+    id: 6,
+    question: "What's your favorite food in the canteen?",
+    type: "Ranking",
+    totalResponses: 276,
+    responseRate: 76,
+    finalRanking: [
+      { name: "Donuts 🍩", wins: 142, fill: "hsl(var(--success))" },
+      { name: "Cookies 🍪", wins: 98, fill: "hsl(var(--primary))" },
+      { name: "Macarons 🍬", wins: 73, fill: "hsl(var(--accent))" },
+      { name: "Croissants 🥐", wins: 45, fill: "hsl(var(--muted))" },
+      { name: "Muffins 🧁", wins: 28, fill: "hsl(var(--muted-foreground))" },
     ],
   },
 ];
@@ -173,6 +187,63 @@ const Analytics = () => {
                       ))}
                     </div>
                   </div>
+                )}
+
+                {/* Ranking Results */}
+                {question.type === "Ranking" && question.finalRanking && (
+                  <>
+                    <div>
+                      <h4 className="text-lg font-semibold mb-4 flex items-center">
+                        <Trophy className="mr-2 h-5 w-5 text-primary" />
+                        Overall Ranking
+                      </h4>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <BarChart data={question.finalRanking} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
+                          <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" width={100} />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: "hsl(var(--card))", 
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "8px"
+                            }} 
+                          />
+                          <Bar dataKey="wins" radius={[0, 8, 8, 0]}>
+                            {question.finalRanking.map((entry, idx) => (
+                              <Cell key={`cell-${idx}`} fill={entry.fill} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div>
+                      <h4 className="text-lg font-semibold mb-4">Top Preferences</h4>
+                      <div className="space-y-3">
+                        {question.finalRanking.slice(0, 3).map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                                {idx + 1}
+                              </div>
+                              <div 
+                                className="h-3 w-3 rounded-full" 
+                                style={{ backgroundColor: item.fill }}
+                              />
+                              <span className="font-medium">{item.name}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-bold text-lg">{item.wins}</span>
+                              <span className="text-muted-foreground text-sm ml-2">
+                                ({((item.wins / question.totalResponses) * 100).toFixed(1)}%)
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 {/* Sentiment Analysis for Open-ended */}

@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Heart, AlertTriangle, Sparkles, Wrench, Target, TrendingDown, TrendingUp, BarChart3, MessageSquare, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ArrowLeft, Heart, AlertTriangle, Sparkles, Wrench, Target, TrendingDown, TrendingUp, BarChart3, MessageSquare, ThumbsUp, ThumbsDown, Trophy } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import ReactWordcloud from "react-wordcloud";
 
@@ -137,12 +138,88 @@ const questionsData = [
       { icon: Target, text: "Implement additional communication tools for better reach" },
     ],
   },
+  {
+    id: 6,
+    question: "What's your favorite food in the canteen?",
+    type: "Ranking",
+    totalResponses: 276,
+    responseRate: 76,
+    options: [
+      { name: "Croissants 🥐", emoji: "🥐", wins: 0 },
+      { name: "Muffins 🧁", emoji: "🧁", wins: 0 },
+      { name: "Cookies 🍪", emoji: "🍪", wins: 0 },
+      { name: "Macarons 🍬", emoji: "🍬", wins: 0 },
+      { name: "Donuts 🍩", emoji: "🍩", wins: 0 },
+    ],
+    finalRanking: [
+      { name: "Donuts 🍩", wins: 142, fill: "hsl(var(--success))" },
+      { name: "Cookies 🍪", wins: 98, fill: "hsl(var(--primary))" },
+      { name: "Macarons 🍬", wins: 73, fill: "hsl(var(--accent))" },
+      { name: "Croissants 🥐", wins: 45, fill: "hsl(var(--muted))" },
+      { name: "Muffins 🧁", wins: 28, fill: "hsl(var(--muted-foreground))" },
+    ],
+    keyObservations: [
+      { icon: Trophy, text: "Donuts emerged as the clear favorite with 51.4% preference" },
+      { icon: TrendingUp, text: "Sweet items (donuts, cookies) preferred over flaky pastries" },
+    ],
+    actionableInsights: [
+      { icon: Sparkles, text: "Expand donut variety and ensure daily availability" },
+      { icon: Target, text: "Consider introducing more sweet comfort food options" },
+    ],
+  },
 ];
 
 const QuestionDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const question = questionsData.find((q) => q.id === Number(id));
+  
+  // State for ranking game
+  const [gameStarted, setGameStarted] = useState(false);
+  const [currentRound, setCurrentRound] = useState(0);
+  const [remainingOptions, setRemainingOptions] = useState<any[]>([]);
+  const [currentPair, setCurrentPair] = useState<any[]>([]);
+  const [winner, setWinner] = useState<any>(null);
+  const [gameComplete, setGameComplete] = useState(false);
+  const [userRanking, setUserRanking] = useState<any[]>([]);
+  
+  const startRankingGame = () => {
+    if (question?.options) {
+      const shuffled = [...question.options].sort(() => Math.random() - 0.5);
+      setRemainingOptions(shuffled);
+      setCurrentPair([shuffled[0], shuffled[1]]);
+      setGameStarted(true);
+      setCurrentRound(1);
+      setGameComplete(false);
+      setUserRanking([]);
+    }
+  };
+  
+  const handleChoice = (chosen: any, notChosen: any) => {
+    const updatedRanking = [...userRanking];
+    const chosenIndex = updatedRanking.findIndex(item => item.name === chosen.name);
+    
+    if (chosenIndex === -1) {
+      updatedRanking.push({ ...chosen, wins: 1 });
+    } else {
+      updatedRanking[chosenIndex].wins += 1;
+    }
+    
+    setUserRanking(updatedRanking);
+    
+    // Get next challenger
+    const currentIndex = remainingOptions.findIndex(opt => opt.name === notChosen.name);
+    const nextIndex = (currentIndex + 2) % remainingOptions.length;
+    
+    if (currentRound >= 10) {
+      // Game complete after 10 rounds
+      setWinner(chosen);
+      setGameComplete(true);
+    } else {
+      setCurrentPair([chosen, remainingOptions[nextIndex]]);
+      setCurrentRound(currentRound + 1);
+    }
+  };
 
   if (!question) {
     return (
@@ -280,6 +357,132 @@ const QuestionDetail = () => {
                       <span className="font-bold text-lg">{response.value}</span>
                       <span className="text-muted-foreground text-sm ml-2">
                         ({((response.value / question.totalResponses) * 100).toFixed(1)}%)
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </>
+        )}
+
+        {/* Ranking Game */}
+        {question.type === "Ranking" && !gameStarted && (
+          <Card className="p-8 lg:col-span-2">
+            <div className="text-center">
+              <Trophy className="h-16 w-16 text-primary mx-auto mb-4" />
+              <h2 className="text-2xl font-semibold mb-3">Pairwise Ranking Game</h2>
+              <p className="text-muted-foreground mb-6">
+                Compare your preferences two at a time. Choose your favorite in each round, and we'll determine your ultimate pick!
+              </p>
+              <Button size="lg" onClick={startRankingGame}>
+                Start Ranking Game
+              </Button>
+            </div>
+          </Card>
+        )}
+        
+        {question.type === "Ranking" && gameStarted && !gameComplete && (
+          <Card className="p-8 lg:col-span-2">
+            <div className="text-center mb-6">
+              <Badge variant="outline" className="mb-4">Round {currentRound} of 10</Badge>
+              <h2 className="text-2xl font-semibold mb-2">Which do you prefer?</h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+              {currentPair.map((option, idx) => (
+                <Button
+                  key={idx}
+                  variant="outline"
+                  className="h-32 text-4xl hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105"
+                  onClick={() => handleChoice(option, currentPair[1 - idx])}
+                >
+                  {option.emoji}
+                  <span className="ml-3 text-lg">{option.name.replace(option.emoji, '').trim()}</span>
+                </Button>
+              ))}
+            </div>
+          </Card>
+        )}
+        
+        {question.type === "Ranking" && gameComplete && (
+          <Card className="p-8 lg:col-span-2">
+            <div className="text-center mb-6">
+              <Trophy className="h-16 w-16 text-success mx-auto mb-4" />
+              <h2 className="text-3xl font-semibold mb-2">Your Ultimate Pick: {winner?.name}</h2>
+              <p className="text-muted-foreground">
+                Your taste profile: Sweet over flaky, comfort over elegance
+              </p>
+            </div>
+            <div className="max-w-2xl mx-auto space-y-3 mb-6">
+              <h3 className="text-xl font-semibold mb-4">Your Personal Ranking:</h3>
+              {userRanking
+                .sort((a, b) => b.wins - a.wins)
+                .map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                        {idx + 1}
+                      </div>
+                      <span className="text-2xl">{item.emoji}</span>
+                      <span className="font-medium">{item.name.replace(item.emoji, '').trim()}</span>
+                    </div>
+                    <span className="text-muted-foreground">{item.wins} wins</span>
+                  </div>
+                ))}
+            </div>
+            <div className="text-center">
+              <Button onClick={startRankingGame}>Play Again</Button>
+            </div>
+          </Card>
+        )}
+        
+        {question.type === "Ranking" && !gameStarted && question.finalRanking && (
+          <>
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center">
+                <Trophy className="mr-2 h-5 w-5 text-primary" />
+                Overall Ranking
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={question.finalRanking} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" width={120} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: "hsl(var(--card))", 
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px"
+                    }} 
+                  />
+                  <Bar dataKey="wins" radius={[0, 8, 8, 0]}>
+                    {question.finalRanking.map((entry, idx) => (
+                      <Cell key={`cell-${idx}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Preference Breakdown</h2>
+              <div className="space-y-3">
+                {question.finalRanking.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                        {idx + 1}
+                      </div>
+                      <div 
+                        className="h-3 w-3 rounded-full" 
+                        style={{ backgroundColor: item.fill }}
+                      />
+                      <span className="font-medium">{item.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-lg">{item.wins}</span>
+                      <span className="text-muted-foreground text-sm ml-2">
+                        ({((item.wins / question.totalResponses) * 100).toFixed(1)}%)
                       </span>
                     </div>
                   </div>
