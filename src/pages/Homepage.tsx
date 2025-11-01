@@ -52,6 +52,19 @@ const Homepage = () => {
   const [scrollToQuestionId, setScrollToQuestionId] = useState<string | null>(null);
   const questionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
+  // Evaluation state
+  const [evaluationResult, setEvaluationResult] = useState<{
+    xp: number;
+    feedback: string;
+    questionId: string;
+    answer: string;
+  } | null>(null);
+  const [showEvaluation, setShowEvaluation] = useState(false);
+  const evaluationTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [undoAvailable, setUndoAvailable] = useState(false);
+  const evaluationRef = useRef<HTMLDivElement>(null);
+  
   // Ranking game state
   const [rankingStarted, setRankingStarted] = useState(false);
   const [showRankingResults, setShowRankingResults] = useState(false);
@@ -159,23 +172,108 @@ const Homepage = () => {
     }
   }, [viewMode, scrollToQuestionId]);
 
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (evaluationTimerRef.current) clearTimeout(evaluationTimerRef.current);
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    };
+  }, []);
+
+  // Focus evaluation when shown (accessibility)
+  useEffect(() => {
+    if (showEvaluation && evaluationRef.current) {
+      evaluationRef.current.focus();
+    }
+  }, [showEvaluation]);
+
   const handleStartQuestion = (question: Question) => {
     setCurrentQuestion(question);
+    setShowEvaluation(false);
+    setEvaluationResult(null);
+    setUndoAvailable(false);
   };
 
   const handleSkipQuestion = () => {
     if (currentQuestion) {
-      const newAnsweredQuestions = [...answeredQuestions, currentQuestion.id];
-      setAnsweredQuestions(newAnsweredQuestions);
+      setEvaluationResult({
+        xp: 0,
+        feedback: "Question skipped",
+        questionId: currentQuestion.id,
+        answer: ""
+      });
+      setShowEvaluation(true);
+      setUndoAvailable(true);
       
-      const nextQuestion = availableQuestions.find(
-        (q) => !newAnsweredQuestions.includes(q.id)
-      );
+      // Start undo timer
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = setTimeout(() => {
+        setUndoAvailable(false);
+      }, 5000);
       
-      setCurrentQuestion(nextQuestion || null);
-      setOpenAnswer("");
-      toast.info("Question skipped");
+      // In Play Mode, auto-advance
+      if (viewMode === "play") {
+        if (evaluationTimerRef.current) clearTimeout(evaluationTimerRef.current);
+        evaluationTimerRef.current = setTimeout(() => {
+          handleNext();
+        }, 1500);
+      }
+      
+      toast.info("Question skipped", { duration: 2000 });
     }
+  };
+
+  const handleUndo = async () => {
+    if (!evaluationResult || !currentQuestion) return;
+    
+    // Clear timers
+    if (evaluationTimerRef.current) clearTimeout(evaluationTimerRef.current);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    
+    // Remove from answered questions
+    setAnsweredQuestions(prev => prev.filter(id => id !== evaluationResult.questionId));
+    
+    // Delete the response from database if it was saved
+    if (evaluationResult.xp > 0) {
+      const { error } = await supabase
+        .from('user_responses')
+        .delete()
+        .eq('question_id', evaluationResult.questionId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (error) {
+        console.error('Error undoing response:', error);
+      }
+    }
+    
+    // Reset evaluation state
+    setShowEvaluation(false);
+    setEvaluationResult(null);
+    setUndoAvailable(false);
+    
+    toast.success("Answer undone", { duration: 2000 });
+  };
+
+  const handleNext = () => {
+    if (!currentQuestion) return;
+    
+    // Clear timers
+    if (evaluationTimerRef.current) clearTimeout(evaluationTimerRef.current);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    
+    const newAnsweredQuestions = [...answeredQuestions, currentQuestion.id];
+    setAnsweredQuestions(newAnsweredQuestions);
+    setShowEvaluation(false);
+    setEvaluationResult(null);
+    setUndoAvailable(false);
+    setOpenAnswer("");
+    
+    const nextQuestion = availableQuestions.find(
+      (q) => !newAnsweredQuestions.includes(q.id)
+    );
+    
+    setCurrentQuestion(nextQuestion || null);
   };
 
   const handleExitPlayMode = () => {
@@ -235,13 +333,15 @@ const Homepage = () => {
 
       if (error) {
         console.error('Error saving response:', error);
-        toast.error('Failed to save answer');
+        toast.error('Failed to save answer', { duration: 2000 });
         return;
       }
 
-      toast.success(`+${earnedXP} XP!`, {
+      // Show subtle toast for XP
+      toast.success(`+${earnedXP} XP`, {
         description: evaluationReason,
         icon: <Star className="h-4 w-4 text-accent" />,
+        duration: 2000
       });
       
       // Add XP and check for level up
@@ -257,16 +357,30 @@ const Homepage = () => {
         setShowLevelUp(true);
       }
       
-      // For multiple choice and yes/no, show vote distribution
+      // Set evaluation result
+      setEvaluationResult({
+        xp: earnedXP,
+        feedback: evaluationReason,
+        questionId: currentQuestion.id,
+        answer: answer
+      });
+      setShowEvaluation(true);
+      setUndoAvailable(true);
+      
+      // Start undo timer
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = setTimeout(() => {
+        setUndoAvailable(false);
+      }, 5000);
+      
+      // For multiple choice and yes/no, fetch and store vote distribution for later
       if (currentQuestion.type === 'multiple-choice' || currentQuestion.type === 'yes-no') {
-        // Fetch vote distribution
         const { data: responses, error: fetchError } = await supabase
           .from('user_responses')
           .select('selected_option')
           .eq('question_id', currentQuestion.id);
 
         if (!fetchError && responses) {
-          // Count votes
           const voteCounts: { [key: string]: number } = {};
           const options = currentQuestion.type === 'yes-no' 
             ? ['Yes', 'No'] 
@@ -290,22 +404,15 @@ const Homepage = () => {
           }));
 
           setVoteDistribution(distribution);
-          setShowVoteDistribution(true);
         }
-      } else if (currentQuestion.type === 'open-ended') {
-        // For open-ended questions, show word cloud
-        setShowWordCloud(true);
-      } else {
-        // For other question types, move to next immediately
-        const newAnsweredQuestions = [...answeredQuestions, currentQuestion.id];
-        setAnsweredQuestions(newAnsweredQuestions);
-        setOpenAnswer("");
-        
-        const nextQuestion = availableQuestions.find(
-          (q) => !newAnsweredQuestions.includes(q.id)
-        );
-        
-        setCurrentQuestion(nextQuestion || null);
+      }
+      
+      // In Play Mode, auto-advance after delay
+      if (viewMode === "play") {
+        if (evaluationTimerRef.current) clearTimeout(evaluationTimerRef.current);
+        evaluationTimerRef.current = setTimeout(() => {
+          handleNext();
+        }, 1500);
       }
     }
   };
@@ -375,7 +482,7 @@ const Homepage = () => {
     return (
       <div 
         className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
-        onClick={() => setCurrentQuestion(null)}
+        onClick={() => !showEvaluation && setCurrentQuestion(null)}
       >
         <Card 
           className="max-w-2xl w-full p-8 shadow-2xl animate-scale-in"
@@ -392,110 +499,156 @@ const Homepage = () => {
               </div>
             </div>
 
-            {/* Render based on type */}
-            {currentQuestion.type === "multiple-choice" && (
-              <div className="space-y-3">
-                {currentQuestion.options?.map((option, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="w-full h-auto py-4 text-left justify-start hover:bg-primary hover:text-primary-foreground transition-all"
-                    onClick={() => handleAnswer(option)}
-                  >
-                    <span className="text-lg">{option}</span>
-                  </Button>
-                ))}
-              </div>
-            )}
+            {/* Render based on type - only show if evaluation not shown */}
+            {!showEvaluation && (
+              <>
+                {currentQuestion.type === "multiple-choice" && (
+                  <div className="space-y-3">
+                    {currentQuestion.options?.map((option, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        className="w-full h-auto py-4 text-left justify-start hover:bg-primary hover:text-primary-foreground transition-all"
+                        onClick={() => handleAnswer(option)}
+                      >
+                        <span className="text-lg">{option}</span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
 
-            {currentQuestion.type === "open-ended" && (
-              <div className="space-y-4">
-                <div className="relative">
-                  <Textarea
-                    placeholder="Share your thoughts..."
-                    value={openAnswer}
-                    onChange={(e) => setOpenAnswer(e.target.value)}
-                    className="min-h-[150px] text-base resize-none pr-14"
+                {currentQuestion.type === "open-ended" && (
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <Textarea
+                        placeholder="Share your thoughts..."
+                        value={openAnswer}
+                        onChange={(e) => setOpenAnswer(e.target.value)}
+                        className="min-h-[150px] text-base resize-none pr-14"
+                      />
+                      <div className="absolute bottom-3 right-3">
+                        <VoiceRecorder
+                          onTranscription={(text) => setOpenAnswer(prev => prev ? `${prev} ${text}` : text)}
+                          disabled={false}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        className="flex-1"
+                        onClick={() => handleAnswer(openAnswer)}
+                        disabled={!openAnswer.trim()}
+                      >
+                        Submit Answer
+                      </Button>
+                      <Button variant="outline" onClick={() => setCurrentQuestion(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {currentQuestion.type === "yes-no" && (
+                  <div className="space-y-6">
+                    <p className="text-center text-muted-foreground">Choose your answer</p>
+                    <div className="flex justify-center gap-8">
+                      <Button
+                        size="lg"
+                        variant="destructive"
+                        className="rounded-full h-20 w-20 shadow-xl hover:scale-110 transition-transform"
+                        onClick={() => handleSwipe("left")}
+                      >
+                        <ThumbsDown className="h-8 w-8" />
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="success"
+                        className="rounded-full h-20 w-20 shadow-xl hover:scale-110 transition-transform"
+                        onClick={() => handleSwipe("right")}
+                      >
+                        <ThumbsUp className="h-8 w-8" />
+                      </Button>
+                    </div>
+                    <Button variant="outline" className="w-full" onClick={() => setCurrentQuestion(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Ranking Game */}
+                {currentQuestion.type === "ranking" && currentQuestion.rankingOptions && (
+                  <RankingDragDrop
+                    options={currentQuestion.rankingOptions}
+                    onComplete={handleRankingComplete}
+                    onCancel={() => setCurrentQuestion(null)}
+                    xpReward={currentQuestion.xpReward}
                   />
-                  <div className="absolute bottom-3 right-3">
-                    <VoiceRecorder
-                      onTranscription={(text) => setOpenAnswer(prev => prev ? `${prev} ${text}` : text)}
-                      disabled={false}
-                    />
+                )}
+                
+                {/* Ideation Game */}
+                {currentQuestion.type === "ideation" && (
+                  <IdeationQuestion
+                    questionId={currentQuestion.id}
+                    questionText={currentQuestion.question}
+                    xpReward={currentQuestion.xpReward}
+                    userProgress={userProgress}
+                    setUserProgress={setUserProgress}
+                    answeredQuestions={answeredQuestions}
+                    setAnsweredQuestions={setAnsweredQuestions}
+                    onClose={() => setCurrentQuestion(null)}
+                    onLevelUp={(rewards) => {
+                      setNewRewards(rewards);
+                      setShowLevelUp(true);
+                    }}
+                  />
+                )}
+              </>
+            )}
+            
+            {/* Inline Evaluation Card */}
+            {showEvaluation && evaluationResult && (
+              <div
+                ref={evaluationRef}
+                tabIndex={-1}
+                role="status"
+                aria-live="polite"
+                aria-label="Answer evaluation"
+                className="p-6 bg-gradient-to-br from-primary/10 to-accent/10 border-2 border-primary/30 rounded-lg space-y-4 animate-fade-in"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                        <Star className="h-6 w-6 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-3xl font-bold text-primary">+{evaluationResult.xp} XP</p>
+                        <p className="text-sm text-muted-foreground">Earned</p>
+                      </div>
+                    </div>
+                    <p className="text-base text-foreground">{evaluationResult.feedback}</p>
                   </div>
                 </div>
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1"
-                  onClick={() => handleAnswer(openAnswer)}
-                  disabled={!openAnswer.trim()}
-                >
-                  Submit Answer
-                </Button>
-                {(
-                  <Button variant="outline" onClick={() => setCurrentQuestion(null)}>
-                    Cancel
-                  </Button>
-                )}
-              </div>
-              </div>
-            )}
-
-            {currentQuestion.type === "yes-no" && (
-              <div className="space-y-6">
-                <p className="text-center text-muted-foreground">Choose your answer</p>
-                <div className="flex justify-center gap-8">
+                
+                <div className="flex gap-2">
+                  {undoAvailable && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleUndo}
+                      className="gap-2"
+                    >
+                      <span className="text-sm">↩️</span> Undo (5s)
+                    </Button>
+                  )}
                   <Button
-                    size="lg"
-                    variant="destructive"
-                    className="rounded-full h-20 w-20 shadow-xl hover:scale-110 transition-transform"
-                    onClick={() => handleSwipe("left")}
+                    onClick={handleNext}
+                    className="flex-1"
                   >
-                    <ThumbsDown className="h-8 w-8" />
+                    Next Question
                   </Button>
-                  <Button
-                    size="lg"
-                    variant="success"
-                    className="rounded-full h-20 w-20 shadow-xl hover:scale-110 transition-transform"
-                    onClick={() => handleSwipe("right")}
-                  >
-                  <ThumbsUp className="h-8 w-8" />
-                </Button>
+                </div>
               </div>
-              {(
-                <Button variant="outline" className="w-full" onClick={() => setCurrentQuestion(null)}>
-                  Cancel
-                </Button>
-              )}
-            </div>
-            )}
-            
-            {/* Ranking Game */}
-            {currentQuestion.type === "ranking" && currentQuestion.rankingOptions && (
-              <RankingDragDrop
-                options={currentQuestion.rankingOptions}
-                onComplete={handleRankingComplete}
-                onCancel={() => setCurrentQuestion(null)}
-                xpReward={currentQuestion.xpReward}
-              />
-            )}
-            
-            {/* Ideation Game */}
-            {currentQuestion.type === "ideation" && (
-              <IdeationQuestion
-                questionId={currentQuestion.id}
-                questionText={currentQuestion.question}
-                xpReward={currentQuestion.xpReward}
-                userProgress={userProgress}
-                setUserProgress={setUserProgress}
-                answeredQuestions={answeredQuestions}
-                setAnsweredQuestions={setAnsweredQuestions}
-                onClose={() => setCurrentQuestion(null)}
-                onLevelUp={(rewards) => {
-                  setNewRewards(rewards);
-                  setShowLevelUp(true);
-                }}
-              />
             )}
           </div>
         </Card>
@@ -517,118 +670,171 @@ const Homepage = () => {
               <Badge className="mb-2">{currentQuestion.category}</Badge>
               <h2 className="text-2xl font-bold leading-tight">{currentQuestion.question}</h2>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSkipQuestion}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                Skip
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleExitPlayMode}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                Exit
-              </Button>
-            </div>
+            {!showEvaluation && (
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSkipQuestion}
+                  className="text-muted-foreground hover:text-foreground"
+                  disabled={showEvaluation}
+                >
+                  Skip
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleExitPlayMode}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Exit
+                </Button>
+              </div>
+            )}
           </div>
 
-          {/* Render based on type */}
-          {currentQuestion.type === "multiple-choice" && (
-            <div className="space-y-3">
-              {currentQuestion.options?.map((option, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className="w-full h-auto py-4 text-left justify-start hover:bg-primary hover:text-primary-foreground transition-all"
-                  onClick={() => handleAnswer(option)}
-                >
-                  <span className="text-lg">{option}</span>
-                </Button>
-              ))}
-            </div>
-          )}
+          {/* Render based on type - only show if evaluation not shown */}
+          {!showEvaluation && (
+            <>
+              {currentQuestion.type === "multiple-choice" && (
+                <div className="space-y-3">
+                  {currentQuestion.options?.map((option, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className="w-full h-auto py-4 text-left justify-start hover:bg-primary hover:text-primary-foreground transition-all"
+                      onClick={() => handleAnswer(option)}
+                    >
+                      <span className="text-lg">{option}</span>
+                    </Button>
+                  ))}
+                </div>
+              )}
 
-          {currentQuestion.type === "open-ended" && (
-            <div className="space-y-4">
-              <div className="relative">
-                <Textarea
-                  placeholder="Share your thoughts..."
-                  value={openAnswer}
-                  onChange={(e) => setOpenAnswer(e.target.value)}
-                  className="min-h-[150px] text-base resize-none pr-14"
+              {currentQuestion.type === "open-ended" && (
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Textarea
+                      placeholder="Share your thoughts..."
+                      value={openAnswer}
+                      onChange={(e) => setOpenAnswer(e.target.value)}
+                      className="min-h-[150px] text-base resize-none pr-14"
+                    />
+                    <div className="absolute bottom-3 right-3">
+                      <VoiceRecorder
+                        onTranscription={(text) => setOpenAnswer(prev => prev ? `${prev} ${text}` : text)}
+                        disabled={false}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full"
+                    onClick={() => handleAnswer(openAnswer)}
+                    disabled={!openAnswer.trim()}
+                  >
+                    Submit Answer
+                  </Button>
+                </div>
+              )}
+
+              {currentQuestion.type === "yes-no" && (
+                <div className="space-y-6">
+                  <p className="text-center text-muted-foreground">Choose your answer</p>
+                  <div className="flex justify-center gap-8">
+                    <Button
+                      size="lg"
+                      variant="destructive"
+                      className="rounded-full h-20 w-20 shadow-xl hover:scale-110 transition-transform"
+                      onClick={() => handleSwipe("left")}
+                    >
+                      <ThumbsDown className="h-8 w-8" />
+                    </Button>
+                    <Button
+                      size="lg"
+                      variant="success"
+                      className="rounded-full h-20 w-20 shadow-xl hover:scale-110 transition-transform"
+                      onClick={() => handleSwipe("right")}
+                    >
+                      <ThumbsUp className="h-8 w-8" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Ranking Game */}
+              {currentQuestion.type === "ranking" && currentQuestion.rankingOptions && (
+                <RankingDragDrop
+                  options={currentQuestion.rankingOptions}
+                  onComplete={handleRankingComplete}
+                  onCancel={handleExitPlayMode}
+                  xpReward={currentQuestion.xpReward}
                 />
-                <div className="absolute bottom-3 right-3">
-                  <VoiceRecorder
-                    onTranscription={(text) => setOpenAnswer(prev => prev ? `${prev} ${text}` : text)}
-                    disabled={false}
-                  />
+              )}
+              
+              {/* Ideation Game */}
+              {currentQuestion.type === "ideation" && (
+                <IdeationQuestion
+                  questionId={currentQuestion.id}
+                  questionText={currentQuestion.question}
+                  xpReward={currentQuestion.xpReward}
+                  userProgress={userProgress}
+                  setUserProgress={setUserProgress}
+                  answeredQuestions={answeredQuestions}
+                  setAnsweredQuestions={setAnsweredQuestions}
+                  onClose={handleExitPlayMode}
+                  onLevelUp={(rewards) => {
+                    setNewRewards(rewards);
+                    setShowLevelUp(true);
+                  }}
+                />
+              )}
+            </>
+          )}
+          
+          {/* Inline Evaluation Card */}
+          {showEvaluation && evaluationResult && (
+            <div
+              ref={evaluationRef}
+              tabIndex={-1}
+              role="status"
+              aria-live="polite"
+              aria-label="Answer evaluation"
+              className="p-6 bg-gradient-to-br from-primary/10 to-accent/10 border-2 border-primary/30 rounded-lg space-y-4 animate-fade-in"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                      <Star className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-primary">+{evaluationResult.xp} XP</p>
+                      <p className="text-sm text-muted-foreground">Earned</p>
+                    </div>
+                  </div>
+                  <p className="text-base text-foreground">{evaluationResult.feedback}</p>
                 </div>
               </div>
-              <Button
-                className="w-full"
-                onClick={() => handleAnswer(openAnswer)}
-                disabled={!openAnswer.trim()}
-              >
-                Submit Answer
-              </Button>
-            </div>
-          )}
-
-          {currentQuestion.type === "yes-no" && (
-            <div className="space-y-6">
-              <p className="text-center text-muted-foreground">Choose your answer</p>
-              <div className="flex justify-center gap-8">
+              
+              <div className="flex gap-2">
+                {undoAvailable && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleUndo}
+                    className="gap-2"
+                  >
+                    <span className="text-sm">↩️</span> Undo (5s)
+                  </Button>
+                )}
                 <Button
-                  size="lg"
-                  variant="destructive"
-                  className="rounded-full h-20 w-20 shadow-xl hover:scale-110 transition-transform"
-                  onClick={() => handleSwipe("left")}
+                  onClick={handleNext}
+                  className="flex-1"
                 >
-                  <ThumbsDown className="h-8 w-8" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="success"
-                  className="rounded-full h-20 w-20 shadow-xl hover:scale-110 transition-transform"
-                  onClick={() => handleSwipe("right")}
-                >
-                  <ThumbsUp className="h-8 w-8" />
+                  Next Question
                 </Button>
               </div>
             </div>
-          )}
-          
-          {/* Ranking Game */}
-          {currentQuestion.type === "ranking" && currentQuestion.rankingOptions && (
-            <RankingDragDrop
-              options={currentQuestion.rankingOptions}
-              onComplete={handleRankingComplete}
-              onCancel={handleExitPlayMode}
-              xpReward={currentQuestion.xpReward}
-            />
-          )}
-          
-          {/* Ideation Game */}
-          {currentQuestion.type === "ideation" && (
-            <IdeationQuestion
-              questionId={currentQuestion.id}
-              questionText={currentQuestion.question}
-              xpReward={currentQuestion.xpReward}
-              userProgress={userProgress}
-              setUserProgress={setUserProgress}
-              answeredQuestions={answeredQuestions}
-              setAnsweredQuestions={setAnsweredQuestions}
-              onClose={handleExitPlayMode}
-              onLevelUp={(rewards) => {
-                setNewRewards(rewards);
-                setShowLevelUp(true);
-              }}
-            />
           )}
         </div>
       </Card>
