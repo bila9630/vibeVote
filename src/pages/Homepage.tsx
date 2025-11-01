@@ -937,6 +937,7 @@ const Homepage = () => {
                 variant={viewMode === "play" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => {
+                  setActiveTab("new");
                   setViewMode("play");
                   if (!currentQuestion) {
                     const firstUnanswered = availableQuestions.find(
