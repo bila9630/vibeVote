@@ -19,14 +19,11 @@ interface RelativeLeaderboardProps {
 export function RelativeLeaderboard({ isMobile }: RelativeLeaderboardProps) {
   const [users, setUsers] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const currentUsername = 'Jane Doe'; // Same as Profile page
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        // Get current user's progress from localStorage
-        const savedProgress = localStorage.getItem('userProgress');
-        const currentUsername = savedProgress ? JSON.parse(savedProgress).username || 'You' : 'You';
-        
         const { data, error } = await supabase
           .from('user_progress')
           .select('*')
@@ -37,40 +34,64 @@ export function RelativeLeaderboard({ isMobile }: RelativeLeaderboardProps) {
         if (error) throw error;
 
         if (data) {
+          // Add current user from localStorage if not in database
+          const savedProgress = localStorage.getItem('userProgress');
+          const currentUser = savedProgress ? JSON.parse(savedProgress) : { level: 1, totalXP: 0 };
+          
+          const currentUserData: LeaderboardUser = {
+            id: 'current-user',
+            username: currentUsername,
+            level: currentUser.level,
+            total_xp: currentUser.totalXP,
+            position: 0
+          };
+
+          // Check if current user already exists in data
+          const userExists = data.some(user => user.username === currentUsername);
+          
+          // Combine data
+          const combined = userExists ? data : [...data, currentUserData];
+          
+          // Sort by level first, then by total_xp
+          const sorted = combined.sort((a, b) => {
+            if (b.level !== a.level) {
+              return b.level - a.level;
+            }
+            return b.total_xp - a.total_xp;
+          });
+          
           // Find current user's position
-          const userIndex = data.findIndex(u => u.username === currentUsername);
+          const userIndex = sorted.findIndex(u => u.username === currentUsername);
           
           const rankedUsers: LeaderboardUser[] = [];
           
           if (userIndex !== -1) {
-            // Get users around current user
-            
             // User above (if exists)
             if (userIndex > 0) {
               rankedUsers.push({
-                ...data[userIndex - 1],
+                ...sorted[userIndex - 1],
                 position: userIndex
               });
             }
             
             // Current user
             rankedUsers.push({
-              ...data[userIndex],
+              ...sorted[userIndex],
               position: userIndex + 1
             });
             
             // User below (if exists)
-            if (userIndex < data.length - 1) {
+            if (userIndex < sorted.length - 1) {
               rankedUsers.push({
-                ...data[userIndex + 1],
+                ...sorted[userIndex + 1],
                 position: userIndex + 2
               });
             }
           } else {
-            // Fallback: show top 3 users if current user not found in database
-            for (let i = 0; i < Math.min(3, data.length); i++) {
+            // Fallback: show top 3 users if current user not found
+            for (let i = 0; i < Math.min(3, sorted.length); i++) {
               rankedUsers.push({
-                ...data[i],
+                ...sorted[i],
                 position: i + 1
               });
             }
@@ -141,9 +162,8 @@ export function RelativeLeaderboard({ isMobile }: RelativeLeaderboardProps) {
         <div className="relative flex justify-center">
           <div className="flex flex-col items-center gap-4">
             {users.map((user, index) => {
-              const savedProgress = localStorage.getItem('userProgress');
-              const currentUsername = savedProgress ? JSON.parse(savedProgress).username || 'You' : 'You';
               const isMe = user.username === currentUsername;
+              const xpToNextRank = index > 0 ? users[index - 1].total_xp - user.total_xp + 1 : null;
               
               return (
                 <div key={user.id} className="relative">
@@ -163,19 +183,24 @@ export function RelativeLeaderboard({ isMobile }: RelativeLeaderboardProps) {
                     </div>
                     
                     {/* Avatar */}
-                    <Avatar className={`h-16 w-16 ${isMe ? 'ring-4 ring-primary shadow-lg scale-110' : 'ring-2 ring-border'} transition-all`}>
-                      <AvatarFallback className={isMe ? 'bg-primary text-primary-foreground text-lg' : 'bg-muted'}>
+                    <Avatar className={`h-16 w-16 ${isMe ? 'ring-4 ring-primary shadow-xl scale-110' : 'ring-2 ring-border'} transition-all`}>
+                      <AvatarFallback className={isMe ? 'bg-primary text-primary-foreground text-lg font-bold' : 'bg-muted'}>
                         {user.username.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     
                     {/* Username and level on right */}
-                    <div className="w-24">
+                    <div className="w-32">
                       <p className={`text-sm font-bold ${isMe ? 'text-primary' : 'text-foreground'}`}>
                         {isMe ? 'You' : user.username}
                       </p>
                       <p className="text-xs text-muted-foreground">Level {user.level}</p>
-                      <p className="text-xs text-muted-foreground">{user.total_xp} XP</p>
+                      <p className="text-xs text-muted-foreground">{user.total_xp.toLocaleString()} XP</p>
+                      {isMe && xpToNextRank && (
+                        <p className="text-xs text-primary font-semibold mt-1">
+                          +{xpToNextRank.toLocaleString()} to rank up
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
