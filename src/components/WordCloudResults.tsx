@@ -57,9 +57,16 @@ export const WordCloudResults = ({ questionId, question, onClose, onCancel }: Wo
       }
 
       if (data?.keypoints) {
-        setKeypoints(data.keypoints);
+        // Filter out non-meaningful keypoint categories
+        const meaningfulKeypoints = data.keypoints.filter((kp: Keypoint) => {
+          const lowerText = kp.text.toLowerCase();
+          const excludedCategories = ['uncategorized', 'inappropriate', 'junk', 'n/a', 'none', 'other'];
+          return !excludedCategories.some(cat => lowerText.includes(cat));
+        });
+        
+        setKeypoints(meaningfulKeypoints);
         // Randomly select up to 6 keypoints
-        const shuffled = [...data.keypoints].sort(() => Math.random() - 0.5);
+        const shuffled = [...meaningfulKeypoints].sort(() => Math.random() - 0.5);
         setDisplayedKeypoints(shuffled.slice(0, 6));
       }
     } catch (error) {
