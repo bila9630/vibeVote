@@ -13,9 +13,9 @@ import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { RankingDragDrop } from "@/components/RankingDragDrop";
 import { IdeationQuestion } from "@/components/IdeationQuestion";
 import { DailyStreakCard } from "@/components/DailyStreakCard";
+import { RelativeLeaderboard } from "@/components/RelativeLeaderboard";
 import { LevelUpModal } from "@/components/LevelUpModal";
 import { ProposeQuestionDialog } from "@/components/ProposeQuestionDialog";
-import { LeaderboardSidebar } from "@/components/LeaderboardSidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   UserProgress, 
@@ -979,8 +979,11 @@ const Homepage = () => {
         </div>
       </div>
 
-      {/* Daily Streak Card */}
-      <DailyStreakCard isMobile={isMobile} />
+      {/* Daily Streak and Leaderboard Cards */}
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <DailyStreakCard isMobile={isMobile} />
+        <RelativeLeaderboard isMobile={isMobile} />
+      </div>
 
       {/* Challenge Surface */}
       {showChallengeSurface ? (
@@ -1386,12 +1389,7 @@ const Homepage = () => {
         onOpenChange={setShowProposeDialog}
       />
       </div>
-
-      {/* Leaderboard Sidebar */}
-      <div className="hidden lg:block w-24 flex-shrink-0">
-        <LeaderboardSidebar />
       </div>
-    </div>
     </div>
   );
 };
