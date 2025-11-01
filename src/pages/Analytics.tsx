@@ -135,7 +135,14 @@ const Analytics = () => {
         // For multiple-choice and yes-no questions, aggregate responses
         let chartData = [];
         if (questionData.question_type === 'multiple-choice' || questionData.question_type === 'yes-no') {
-          const options = (questionData.options as any)?.options || [];
+          // For yes-no questions, use hardcoded options if not in database
+          let options: string[] = [];
+          if (questionData.question_type === 'yes-no') {
+            options = ['Yes', 'No'];
+          } else {
+            options = (questionData.options as any)?.options || [];
+          }
+          
           const responseCounts: { [key: string]: number } = {};
           
           options.forEach((opt: string) => {
@@ -153,9 +160,9 @@ const Analytics = () => {
             name: opt,
             value: responseCounts[opt],
             fill: idx === 0 ? "hsl(var(--success))" : 
-                  idx === 1 ? "hsl(var(--primary))" : 
+                  idx === 1 ? "hsl(var(--destructive))" : 
                   idx === 2 ? "hsl(var(--accent))" : 
-                  "hsl(var(--destructive))"
+                  "hsl(var(--primary))"
           }));
         }
 
