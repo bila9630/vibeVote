@@ -74,6 +74,25 @@ const Homepage = () => {
   const [userProgress, setUserProgress] = useState<UserProgress>(loadProgress());
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newRewards, setNewRewards] = useState<LevelReward[]>([]);
+  
+  // Reload progress when component mounts or becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        setUserProgress(loadProgress());
+      }
+    };
+    
+    // Reload on mount
+    setUserProgress(loadProgress());
+    
+    // Reload when tab becomes visible
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   // Load questions from database
   useEffect(() => {

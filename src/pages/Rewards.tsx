@@ -1,23 +1,90 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Gift, Lock, TreePine, ArrowRight, Trophy } from "lucide-react";
+import { Gift, Lock, TreePine, ArrowRight, Trophy, ShoppingBag, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { loadProgress, getUnlockedRewards, getLevelRewards } from "@/lib/xpSystem";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
+
+interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  cost: number;
+  levelRequired: number;
+}
+
+const shopItems: ShopItem[] = [
+  { id: "coffee", name: "☕ Coffee Voucher", description: "Redeem for a free coffee at the office", icon: "☕", cost: 500, levelRequired: 2 },
+  { id: "lunch", name: "🍕 Team Lunch", description: "Join us for a team lunch", icon: "🍕", cost: 1000, levelRequired: 5 },
+  { id: "tshirt", name: "👕 Company T-Shirt", description: "Exclusive company merchandise", icon: "👕", cost: 1500, levelRequired: 7 },
+  { id: "book", name: "📚 Book of Choice", description: "Pick any professional development book", icon: "📚", cost: 2000, levelRequired: 10 },
+  { id: "day-off", name: "🏖️ Extra Day Off", description: "Enjoy an additional day of paid leave", icon: "🏖️", cost: 5000, levelRequired: 15 },
+  { id: "conference", name: "🎯 Conference Pass", description: "Attend a professional conference", icon: "🎯", cost: 10000, levelRequired: 20 },
+];
 
 const Rewards = () => {
   const navigate = useNavigate();
   const [userProgress, setUserProgress] = useState(loadProgress());
+  const [redeemedItems, setRedeemedItems] = useState<string[]>([]);
   const totalTreesPlanted = 127;
   
   useEffect(() => {
     // Reload progress when component mounts
     setUserProgress(loadProgress());
+    
+    // Load redeemed items from localStorage
+    const saved = localStorage.getItem('redeemedItems');
+    if (saved) {
+      setRedeemedItems(JSON.parse(saved));
+    }
   }, []);
 
   const unlockedRewards = getUnlockedRewards(userProgress.level);
   const allRewards = getLevelRewards();
+  
+  const handleRedeem = (item: ShopItem) => {
+    if (userProgress.totalXP < item.cost) {
+      toast.error("Not enough XP!", {
+        description: `You need ${item.cost - userProgress.totalXP} more XP to redeem this item.`,
+      });
+      return;
+    }
+    
+    if (userProgress.level < item.levelRequired) {
+      toast.error("Level too low!", {
+        description: `You need to reach Level ${item.levelRequired} to redeem this item.`,
+      });
+      return;
+    }
+    
+    if (redeemedItems.includes(item.id)) {
+      toast.error("Already redeemed!", {
+        description: "You've already redeemed this item.",
+      });
+      return;
+    }
+    
+    // Deduct XP and mark as redeemed
+    const newProgress = {
+      ...userProgress,
+      totalXP: userProgress.totalXP - item.cost,
+    };
+    setUserProgress(newProgress);
+    
+    const newRedeemedItems = [...redeemedItems, item.id];
+    setRedeemedItems(newRedeemedItems);
+    
+    // Save to localStorage
+    localStorage.setItem('userProgress', JSON.stringify(newProgress));
+    localStorage.setItem('redeemedItems', JSON.stringify(newRedeemedItems));
+    
+    toast.success(`${item.icon} Redeemed!`, {
+      description: `${item.name} has been added to your rewards. Check with HR to claim it!`,
+    });
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -69,6 +136,78 @@ const Rewards = () => {
           </Button>
         </div>
       </Card>
+
+      {/* Rewards Shop */}
+      <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+        <ShoppingBag className="h-7 w-7 text-primary" />
+        Rewards Shop
+      </h2>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {shopItems.map((item, index) => {
+          const canAfford = userProgress.totalXP >= item.cost;
+          const canUnlock = userProgress.level >= item.levelRequired;
+          const isRedeemed = redeemedItems.includes(item.id);
+          const canRedeem = canAfford && canUnlock && !isRedeemed;
+          
+          return (
+            <Card
+              key={item.id}
+              className={`p-6 shadow-lg transition-all animate-fade-in ${
+                !canUnlock ? "opacity-60" : canRedeem ? "hover:scale-105 hover:shadow-xl" : ""
+              }`}
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <div className="space-y-4">
+                {/* Icon and Cost */}
+                <div className="flex items-start justify-between">
+                  <div className={`text-5xl ${
+                    !canUnlock ? "grayscale opacity-50" : ""
+                  }`}>
+                    {item.icon}
+                  </div>
+                  <Badge variant={canAfford ? "default" : "secondary"} className="text-xs">
+                    {item.cost} XP
+                  </Badge>
+                </div>
+
+                {/* Content */}
+                <div>
+                  <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
+                    {item.name}
+                    {!canUnlock && <Lock className="h-4 w-4 text-muted-foreground" />}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {item.description}
+                  </p>
+                </div>
+
+                {/* Footer */}
+                <div className="pt-3 border-t border-border">
+                  {isRedeemed ? (
+                    <div className="flex items-center gap-2 text-success">
+                      <Check className="h-5 w-5" />
+                      <span className="font-semibold">Redeemed!</span>
+                    </div>
+                  ) : !canUnlock ? (
+                    <div className="text-sm text-muted-foreground">
+                      Unlock at Level {item.levelRequired}
+                    </div>
+                  ) : (
+                    <Button 
+                      className="w-full" 
+                      onClick={() => handleRedeem(item)}
+                      disabled={!canRedeem}
+                      variant={canAfford ? "default" : "outline"}
+                    >
+                      {canAfford ? "Redeem" : `Need ${item.cost - userProgress.totalXP} more XP`}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
 
       {/* Achievements Grid */}
       <h2 className="text-2xl font-bold mb-4">Your Achievements</h2>
