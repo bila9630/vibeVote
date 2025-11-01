@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CommandDialog,
@@ -25,7 +25,6 @@ interface SearchDialogProps {
 }
 
 export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
-  const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
   // All searchable content grouped by page
@@ -133,18 +132,8 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
     },
   ];
 
-  // Filter results based on search
-  const filteredResults = search
-    ? allContent.filter(
-        (item) =>
-          item.title.toLowerCase().includes(search.toLowerCase()) ||
-          item.description?.toLowerCase().includes(search.toLowerCase()) ||
-          item.page.toLowerCase().includes(search.toLowerCase())
-      )
-    : [];
-
-  // Group results by page
-  const groupedResults = filteredResults.reduce((acc, item) => {
+  // Group results by page (cmdk handles filtering internally)
+  const groupedResults = allContent.reduce((acc, item) => {
     if (!acc[item.page]) {
       acc[item.page] = [];
     }
@@ -155,7 +144,6 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   const handleSelect = (path: string) => {
     navigate(path);
     onOpenChange(false);
-    setSearch("");
   };
 
   useEffect(() => {
@@ -172,11 +160,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput
-        placeholder="Search questions, insights..."
-        value={search}
-        onValueChange={setSearch}
-      />
+      <CommandInput placeholder="Search questions, insights..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         {Object.entries(groupedResults).map(([page, results]) => (
@@ -184,6 +168,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
             {results.map((result) => (
               <CommandItem
                 key={result.id}
+                value={`${result.title} ${result.description || ""}`}
                 onSelect={() => handleSelect(result.path)}
                 className="cursor-pointer"
               >
