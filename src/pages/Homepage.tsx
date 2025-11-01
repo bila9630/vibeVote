@@ -630,7 +630,7 @@ const Homepage = () => {
             )}
             
             {currentQuestion.type === "ideation" && ideationStarted && !ideationComplete && (
-              <div className="space-y-6 max-h-[75vh] overflow-y-auto">
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Clock className="h-6 w-6 text-primary" />
