@@ -10,6 +10,7 @@ import { Star, TrendingUp, Clock, ThumbsUp, ThumbsDown, ChevronRight, Flame, Tro
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { HorseRaceAnimation } from "@/components/HorseRaceAnimation";
+import { supabase } from "@/integrations/supabase/client";
 
 type QuestionType = "multiple-choice" | "open-ended" | "yes-no" | "ranking" | "ideation";
 
@@ -125,8 +126,27 @@ const Homepage = () => {
     setCurrentQuestion(question);
   };
 
-  const handleAnswer = (answer: string) => {
+  const handleAnswer = async (answer: string) => {
     if (currentQuestion) {
+      // Save response to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase
+          .from('user_responses')
+          .insert({
+            user_id: user.id,
+            question_id: currentQuestion.id.toString(),
+            selected_option: currentQuestion.type === 'multiple-choice' || currentQuestion.type === 'yes-no' ? answer : null,
+            response_text: currentQuestion.type === 'open-ended' ? answer : null,
+          });
+
+        if (error) {
+          console.error('Error saving response:', error);
+          toast.error('Failed to save answer');
+          return;
+        }
+      }
+
       toast.success(`+${currentQuestion.xpReward} XP!`, {
         description: "Answer submitted successfully!",
         icon: <Star className="h-4 w-4 text-accent" />,
@@ -201,8 +221,30 @@ const Homepage = () => {
     }
   };
   
-  const completeRankingGame = () => {
+  const completeRankingGame = async () => {
     if (currentQuestion) {
+      // Save ranking to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const rankingResult = userRanking.map((item, index) => 
+          `${index + 1}. ${item.name}`
+        ).join(', ');
+
+        const { error } = await supabase
+          .from('user_responses')
+          .insert({
+            user_id: user.id,
+            question_id: currentQuestion.id.toString(),
+            response_text: rankingResult,
+          });
+
+        if (error) {
+          console.error('Error saving ranking response:', error);
+          toast.error('Failed to save ranking');
+          return;
+        }
+      }
+
       toast.success(`+${currentQuestion.xpReward} XP!`, {
         description: "Ranking complete!",
         icon: <Trophy className="h-4 w-4 text-accent" />,
@@ -296,8 +338,26 @@ const Homepage = () => {
     }
   };
   
-  const completeIdeationGame = () => {
+  const completeIdeationGame = async () => {
     if (currentQuestion) {
+      // Save all ideas to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase
+          .from('user_responses')
+          .insert({
+            user_id: user.id,
+            question_id: currentQuestion.id.toString(),
+            response_text: ideationIdeas.join(', '),
+          });
+
+        if (error) {
+          console.error('Error saving ideation response:', error);
+          toast.error('Failed to save ideas');
+          return;
+        }
+      }
+
       const totalXP = currentQuestion.xpReward + ideationScore;
       toast.success(`+${totalXP} XP!`, {
         description: `${ideationIdeas.length} ideas generated!`,

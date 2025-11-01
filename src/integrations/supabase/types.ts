@@ -14,7 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      questions: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          options: Json | null
+          question_text: string
+          question_type: string
+          xp_reward: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          options?: Json | null
+          question_text: string
+          question_type: string
+          xp_reward?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          options?: Json | null
+          question_text?: string
+          question_type?: string
+          xp_reward?: number | null
+        }
+        Relationships: []
+      }
+      user_responses: {
+        Row: {
+          created_at: string | null
+          id: string
+          question_id: string | null
+          response_text: string | null
+          selected_option: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          question_id?: string | null
+          response_text?: string | null
+          selected_option?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          question_id?: string | null
+          response_text?: string | null
+          selected_option?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
