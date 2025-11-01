@@ -18,10 +18,10 @@ export const HorseRaceAnimation = ({ isActive, speed }: HorseRaceAnimationProps)
     
     const interval = setInterval(() => {
       setPosition((prev) => {
-        const newPos = prev + speed * 0.3;
+        const newPos = prev + speed * 0.08;
         return newPos >= 95 ? 0 : newPos;
       });
-    }, 50);
+    }, 100);
     
     return () => clearInterval(interval);
   }, [isActive, speed]);
