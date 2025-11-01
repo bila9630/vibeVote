@@ -244,15 +244,19 @@ const Analytics = () => {
                         <ResponsiveContainer width="100%" height={250}>
                           {realQuestion.type === "Ranking" ? (
                             <BarChart 
-                              data={realQuestion.responses} 
+                              data={realQuestion.responses.map((item: any) => ({
+                                ...item,
+                                invertedScore: 6 - item.averagePlacement
+                              }))} 
                               layout="horizontal"
                               margin={{ left: 20, right: 30, top: 20, bottom: 20 }}
                             >
                               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                               <XAxis 
                                 type="number" 
-                                domain={[0, 'dataMax + 0.5']}
-                                label={{ value: 'Average Placement (Lower is Better)', position: 'insideBottom', offset: -10 }}
+                                domain={[0, 5]}
+                                label={{ value: 'Rating (5 = Worst, 1 = Best)', position: 'insideBottom', offset: -10 }}
+                                reversed
                               />
                               <YAxis 
                                 type="category" 
@@ -265,10 +269,13 @@ const Analytics = () => {
                                   border: "1px solid hsl(var(--border))",
                                   borderRadius: "8px"
                                 }}
-                                formatter={(value: number) => [value.toFixed(2), 'Avg Placement']}
+                                formatter={(value: number, name: string, props: any) => [
+                                  `Avg: ${props.payload.averagePlacement.toFixed(2)}`, 
+                                  'Placement'
+                                ]}
                               />
                               <Bar 
-                                dataKey="averagePlacement" 
+                                dataKey="invertedScore" 
                                 radius={[0, 4, 4, 0]}
                               >
                                 {realQuestion.responses.map((entry: any, index: number) => (
