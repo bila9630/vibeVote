@@ -294,16 +294,18 @@ const QuestionDetail = () => {
           
           <div className="h-[400px] flex items-center justify-center">
             <ReactWordcloud
-              words={[...question.wordCloud.positive, ...question.wordCloud.negative]}
+              words={[...question.wordCloud.positive, ...question.wordCloud.negative]
+                .sort((a, b) => b.value - a.value)
+                .slice(0, 12)}
               options={{
                 rotations: 2,
                 rotationAngles: [0, 0],
-                fontSizes: [16, 60],
-                colors: ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))"],
+                fontSizes: [20, 64],
+                colors: ["hsl(var(--primary))"],
                 enableTooltip: true,
                 deterministic: true,
                 fontFamily: "inherit",
-                padding: 2,
+                padding: 4,
               }}
             />
           </div>
