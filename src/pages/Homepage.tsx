@@ -683,7 +683,9 @@ const Homepage = () => {
                     onClick={handleNext}
                     className="flex-1"
                   >
-                    Next Question
+                    {currentQuestion?.type === 'open-ended' 
+                      ? 'View Colleague Suggestions →' 
+                      : 'Next Question'}
                   </Button>
                 </div>
               </div>
@@ -877,12 +879,14 @@ const Homepage = () => {
                     <span className="text-sm">↩️</span> Undo (5s)
                   </Button>
                 )}
-                <Button
-                  onClick={handleNext}
-                  className="flex-1"
-                >
-                  Next Question
-                </Button>
+                 <Button
+                   onClick={handleNext}
+                   className="flex-1"
+                 >
+                   {currentQuestion?.type === 'open-ended' 
+                     ? 'View Colleague Suggestions →' 
+                     : 'Next Question'}
+                 </Button>
               </div>
             </div>
           )}
