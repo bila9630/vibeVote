@@ -185,29 +185,31 @@ const Analytics = () => {
                   </div>
                 )}
 
-                {/* Stats/Details Section */}
-                <div>
-                  <h4 className="text-lg font-semibold mb-4">Response Breakdown</h4>
-                  <div className="space-y-3">
-                    {question.responses?.map((response, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className="h-3 w-3 rounded-full" 
-                            style={{ backgroundColor: response.fill }}
-                          />
-                          <span className="font-medium">{response.name}</span>
+                {/* Stats/Details Section - Only for Multiple Choice and Yes/No */}
+                {(question.type === "Multiple Choice" || question.type === "Yes/No") && (
+                  <div>
+                    <h4 className="text-lg font-semibold mb-4">Response Breakdown</h4>
+                    <div className="space-y-3">
+                      {question.responses?.map((response, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="h-3 w-3 rounded-full" 
+                              style={{ backgroundColor: response.fill }}
+                            />
+                            <span className="font-medium">{response.name}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-lg">{response.value}</span>
+                            <span className="text-muted-foreground text-sm ml-2">
+                              ({((response.value / question.totalResponses) * 100).toFixed(1)}%)
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="font-bold text-lg">{response.value}</span>
-                          <span className="text-muted-foreground text-sm ml-2">
-                            ({((response.value / question.totalResponses) * 100).toFixed(1)}%)
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Sentiment Analysis for Open-ended */}
                 {question.type === "Open-ended" && question.sentiment && (
