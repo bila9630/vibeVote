@@ -2,8 +2,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Heart, AlertTriangle, Sparkles, Wrench, Target, TrendingDown, TrendingUp, BarChart3, MessageSquare, ThumbsUp, ThumbsDown } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import ReactWordcloud from "react-wordcloud";
 
 // This would typically come from a shared data file or API
 const questionsData = [
@@ -19,6 +21,30 @@ const questionsData = [
       { name: "Neutral", value: 56, fill: "hsl(var(--accent))" },
       { name: "Dissatisfied", value: 28, fill: "hsl(var(--destructive))" },
     ],
+    wordCloud: {
+      positive: [
+        { text: "flexible", value: 45 },
+        { text: "balanced", value: 38 },
+        { text: "satisfied", value: 35 },
+        { text: "healthy", value: 28 },
+        { text: "time", value: 25 },
+        { text: "family", value: 22 },
+        { text: "manageable", value: 20 },
+        { text: "freedom", value: 18 },
+        { text: "control", value: 15 },
+        { text: "happy", value: 14 },
+      ],
+      negative: [
+        { text: "overwhelming", value: 35 },
+        { text: "stressed", value: 30 },
+        { text: "burnout", value: 25 },
+        { text: "exhausted", value: 22 },
+        { text: "demanding", value: 20 },
+        { text: "imbalanced", value: 18 },
+        { text: "difficult", value: 15 },
+        { text: "pressure", value: 12 },
+      ],
+    },
     keyObservations: [
       { icon: Heart, text: "74% of employees report positive work-life balance satisfaction" },
       { icon: AlertTriangle, text: "8.6% are dissatisfied, indicating potential burnout risk" },
@@ -63,6 +89,29 @@ const questionsData = [
       { text: "Better communication tools needed for remote collaboration.", sentiment: "neutral", time: "5h ago" },
       { text: "The current policy is working well for me.", sentiment: "positive", time: "1d ago" },
     ],
+    wordCloud: {
+      positive: [
+        { text: "flexible", value: 50 },
+        { text: "freedom", value: 42 },
+        { text: "autonomy", value: 38 },
+        { text: "convenient", value: 35 },
+        { text: "productive", value: 32 },
+        { text: "comfortable", value: 28 },
+        { text: "efficient", value: 25 },
+        { text: "balance", value: 22 },
+        { text: "trust", value: 20 },
+        { text: "support", value: 18 },
+      ],
+      negative: [
+        { text: "isolated", value: 28 },
+        { text: "disconnected", value: 25 },
+        { text: "communication", value: 22 },
+        { text: "unclear", value: 18 },
+        { text: "challenging", value: 15 },
+        { text: "lonely", value: 12 },
+        { text: "confusing", value: 10 },
+      ],
+    },
     keyObservations: [
       { icon: Heart, text: "69% positive sentiment shows overall satisfaction with policy" },
       { icon: AlertTriangle, text: "Common requests include more flexibility and better collaboration tools" },
@@ -84,6 +133,29 @@ const questionsData = [
       { name: "Average", value: 58, fill: "hsl(var(--accent))" },
       { name: "Poor", value: 26, fill: "hsl(var(--destructive))" },
     ],
+    wordCloud: {
+      positive: [
+        { text: "opportunities", value: 48 },
+        { text: "growth", value: 42 },
+        { text: "mentorship", value: 38 },
+        { text: "learning", value: 35 },
+        { text: "training", value: 32 },
+        { text: "advancement", value: 28 },
+        { text: "support", value: 25 },
+        { text: "development", value: 22 },
+        { text: "skills", value: 20 },
+        { text: "resources", value: 18 },
+      ],
+      negative: [
+        { text: "limited", value: 30 },
+        { text: "stagnant", value: 25 },
+        { text: "unclear", value: 22 },
+        { text: "lacking", value: 20 },
+        { text: "insufficient", value: 18 },
+        { text: "plateaued", value: 15 },
+        { text: "frustrated", value: 12 },
+      ],
+    },
     keyObservations: [
       { icon: Heart, text: "71.8% rate career development opportunities positively" },
       { icon: AlertTriangle, text: "28.2% rate as average or poor, signaling need for improvement" },
@@ -153,6 +225,55 @@ const QuestionDetail = () => {
           </span>
         </div>
       </div>
+
+      {/* Word Cloud Section */}
+      {question.wordCloud && (
+        <Card className="p-6 mb-8">
+          <h2 className="text-2xl font-semibold mb-2">Feedback Word Analysis</h2>
+          <p className="text-muted-foreground mb-6">Most common words used in positive and negative feedback</p>
+          
+          <Tabs defaultValue="positive" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+              <TabsTrigger value="positive">Positive Feedback</TabsTrigger>
+              <TabsTrigger value="negative">Negative Feedback</TabsTrigger>
+            </TabsList>
+            <TabsContent value="positive" className="mt-0">
+              <div className="h-[400px] flex items-center justify-center">
+                <ReactWordcloud
+                  words={question.wordCloud.positive}
+                  options={{
+                    rotations: 2,
+                    rotationAngles: [0, 0],
+                    fontSizes: [16, 60],
+                    colors: ["hsl(var(--success))"],
+                    enableTooltip: true,
+                    deterministic: true,
+                    fontFamily: "inherit",
+                    padding: 2,
+                  }}
+                />
+              </div>
+            </TabsContent>
+            <TabsContent value="negative" className="mt-0">
+              <div className="h-[400px] flex items-center justify-center">
+                <ReactWordcloud
+                  words={question.wordCloud.negative}
+                  options={{
+                    rotations: 2,
+                    rotationAngles: [0, 0],
+                    fontSizes: [16, 60],
+                    colors: ["hsl(var(--destructive))"],
+                    enableTooltip: true,
+                    deterministic: true,
+                    fontFamily: "inherit",
+                    padding: 2,
+                  }}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+        </Card>
+      )}
 
       {/* Analytics Content */}
       <div className="grid lg:grid-cols-2 gap-6 mb-8">
