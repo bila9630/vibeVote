@@ -1089,11 +1089,10 @@ const Homepage = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
           <TabsTrigger value="new">
             New ({availableQuestions.length - answeredQuestions.length})
           </TabsTrigger>
-          <TabsTrigger value="trending">Trending</TabsTrigger>
           <TabsTrigger value="completed">Completed ({answeredQuestions.length})</TabsTrigger>
         </TabsList>
 
@@ -1142,14 +1141,6 @@ const Homepage = () => {
               </Card>
             ))
           )}
-        </TabsContent>
-
-        <TabsContent value="trending" className="space-y-4">
-          <div className="text-center py-12">
-            <TrendingUp className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-xl font-bold mb-2">Trending Questions</h3>
-            <p className="text-muted-foreground">Most answered by your team this week</p>
-          </div>
         </TabsContent>
 
         <TabsContent value="completed" className="space-y-4">
