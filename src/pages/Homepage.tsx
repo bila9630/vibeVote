@@ -253,6 +253,25 @@ const Homepage = () => {
     toast.success("Answer undone", { duration: 2000 });
   };
 
+  const handleCancelNext = () => {
+    // Clear timers
+    if (evaluationTimerRef.current) clearTimeout(evaluationTimerRef.current);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    
+    // Mark question as answered and close
+    if (currentQuestion) {
+      setAnsweredQuestions([...answeredQuestions, currentQuestion.id]);
+    }
+    
+    setShowEvaluation(false);
+    setEvaluationResult(null);
+    setUndoAvailable(false);
+    setOpenAnswer("");
+    setCurrentQuestion(null);
+    
+    toast.info("Staying on this screen");
+  };
+
   const handleNext = () => {
     if (!currentQuestion) return;
     
@@ -439,13 +458,7 @@ const Homepage = () => {
         }
       }
       
-      // In Play Mode, auto-advance after delay (but not for open-ended questions)
-      if (viewMode === "play" && currentQuestion.type !== 'open-ended') {
-        if (evaluationTimerRef.current) clearTimeout(evaluationTimerRef.current);
-        evaluationTimerRef.current = setTimeout(() => {
-          handleNext();
-        }, 1500);
-      }
+      // Auto-advance removed - user controls when to proceed
     }
   };
 
@@ -681,6 +694,12 @@ const Homepage = () => {
                     </Button>
                   )}
                   <Button
+                    variant="outline"
+                    onClick={handleCancelNext}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
                     onClick={handleNext}
                     className="flex-1"
                   >
@@ -880,6 +899,12 @@ const Homepage = () => {
                     <span className="text-sm">↩️</span> Undo (5s)
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  onClick={handleCancelNext}
+                >
+                  Cancel
+                </Button>
                  <Button
                    onClick={handleNext}
                    className="flex-1"
