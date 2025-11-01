@@ -2,7 +2,6 @@
 
 A gamified employee feedback platform that transforms organizational feedback into an engaging experience through game mechanics, AI-powered insights, and competitive elements.
 
-[![Built with Lovable](https://img.shields.io/badge/Built%20with-Lovable-ff69b4)](https://lovable.dev)
 [![React](https://img.shields.io/badge/React-18.3-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38bdf8)](https://tailwindcss.com/)
@@ -10,8 +9,6 @@ A gamified employee feedback platform that transforms organizational feedback in
 ## 🌟 Overview
 
 Pulse Game revolutionizes how organizations collect and analyze employee feedback by gamifying the entire experience. Users engage with daily questions, earn XP, level up, and compete on leaderboards—all while providing valuable insights to their organization.
-
-**Live Demo:** [View Project](https://lovable.dev/projects/7c0ec0aa-73df-4cac-af3a-0db9dc1c5d16)
 
 ## ✨ Key Features
 
@@ -81,7 +78,7 @@ graph TB
         Forms[React Hook Form<br/>+ Zod Validation]
     end
     
-    subgraph "Lovable Cloud Backend"
+    subgraph "Cloud Backend"
         DB[(PostgreSQL Database<br/>Questions, Responses, Progress)]
         Auth[Authentication<br/>User Management]
         Storage[File Storage<br/>Audio/Images]
@@ -96,7 +93,7 @@ graph TB
     end
     
     subgraph "AI Services"
-        LovableAI[Lovable AI<br/>Gemini & GPT Models]
+        AI[AI<br/>Gemini & GPT Models]
     end
     
     subgraph "Visualization"
@@ -117,10 +114,10 @@ graph TB
     State --> Keywords
     State --> Transcribe
     
-    Trends --> LovableAI
-    Evaluate --> LovableAI
-    Keywords --> LovableAI
-    Transcribe --> LovableAI
+    Trends --> AI
+    Evaluate --> AI
+    Keywords --> AI
+    Transcribe --> AI
     
     DB --> RLS
     Auth --> RLS
@@ -134,7 +131,7 @@ graph TB
     style DB fill:#10b981
     style Auth fill:#10b981
     style Storage fill:#10b981
-    style LovableAI fill:#f59e0b
+    style AI fill:#f59e0b
     style RLS fill:#ef4444
 ```
 
@@ -155,7 +152,7 @@ graph TB
 - **React Word Cloud** - Word cloud generation
 - **DND Kit** - Drag-and-drop functionality
 
-### Backend (Lovable Cloud)
+### Backend (Cloud)
 
 - **Supabase** - PostgreSQL database
 - **Row Level Security** - Data access policies
@@ -165,7 +162,6 @@ graph TB
 
 ### AI Integration
 
-- **Lovable AI** - Built-in AI capabilities
 - Sentiment analysis and evaluation
 - Trend detection and insights
 - Audio transcription services
@@ -228,7 +224,7 @@ pulse-game/
 
 3. **Environment Setup**
 
-   The project uses Lovable Cloud, which automatically configures Supabase connection. Environment variables are pre-configured in `.env`:
+   Environment variables are pre-configured in `.env`:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
    - `VITE_SUPABASE_PROJECT_ID`
@@ -292,45 +288,9 @@ The project uses a comprehensive design system built on:
 - Secure edge function execution
 - Environment variable protection
 
-## 🚢 Deployment
-
-### Via Lovable
-
-1. Click the **Publish** button in the Lovable editor
-2. Your app is instantly deployed with a staging URL
-3. Connect a custom domain in Project Settings
-
-### Via GitHub
-
-1. Connect your GitHub account in Lovable
-2. Push changes sync automatically
-3. Deploy to your preferred hosting platform (Vercel, Netlify, etc.)
-
-## 🤝 Contributing
-
-This project is built with [Lovable](https://lovable.dev), which provides:
-
-- Real-time preview of changes
-- AI-assisted development
-- Automatic deployment
-- Version history and rollback
-
-To contribute:
-
-1. Make changes in Lovable or via Git
-2. Test thoroughly in preview mode
-3. Commit with descriptive messages
-4. Deploy when ready
-
 ## 📝 License
 
-This project was created with Lovable and follows standard web application licensing.
-
-## 🔗 Links
-
-- [Lovable Project Dashboard](https://lovable.dev/projects/7c0ec0aa-73df-4cac-af3a-0db9dc1c5d16)
-- [Lovable Documentation](https://docs.lovable.dev/)
-- [GitHub Repository](https://github.com/your-repo)
+This project was created by the Hackstreetboys and follows standard web application licensing.
 
 ## 💡 Use Cases
 
