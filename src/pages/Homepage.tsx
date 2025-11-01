@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Star, TrendingUp, Clock, ThumbsUp, ThumbsDown, ChevronRight, Flame } from "lucide-react";
 import { toast } from "sonner";
+import { WheelOfFortune, Prize } from "@/components/WheelOfFortune";
 
 type QuestionType = "multiple-choice" | "open-ended" | "yes-no";
 
@@ -69,6 +70,7 @@ const Homepage = () => {
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [openAnswer, setOpenAnswer] = useState("");
+  const [showWheel, setShowWheel] = useState(false);
 
   const handleStartQuestion = (question: Question) => {
     setCurrentQuestion(question);
@@ -76,14 +78,19 @@ const Homepage = () => {
 
   const handleAnswer = (answer: string) => {
     if (currentQuestion) {
-      toast.success(`+${currentQuestion.xpReward} XP!`, {
-        description: "Answer submitted successfully!",
-        icon: <Star className="h-4 w-4 text-accent" />,
-      });
       setAnsweredQuestions([...answeredQuestions, currentQuestion.id]);
       setCurrentQuestion(null);
       setOpenAnswer("");
+      setShowWheel(true);
     }
+  };
+
+  const handleWheelComplete = (prize: Prize) => {
+    toast.success(`You won ${prize.name}!`, {
+      description: `+${prize.xp} bonus XP earned!`,
+      icon: <Star className="h-4 w-4 text-accent" />,
+    });
+    setShowWheel(false);
   };
 
   const handleSwipe = (direction: "left" | "right") => {
@@ -312,6 +319,7 @@ const Homepage = () => {
       </Tabs>
 
       {renderQuestionModal()}
+      {showWheel && <WheelOfFortune onComplete={handleWheelComplete} />}
     </div>
   );
 };
