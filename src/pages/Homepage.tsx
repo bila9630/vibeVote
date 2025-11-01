@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Star, TrendingUp, Clock, ThumbsUp, ThumbsDown, ChevronRight, Flame, Trophy, Lightbulb, Zap, AlertTriangle } from "lucide-react";
+import { Star, TrendingUp, Clock, ThumbsUp, ThumbsDown, ChevronRight, Flame, Trophy, Lightbulb, Zap, AlertTriangle, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { HorseRaceAnimation } from "@/components/HorseRaceAnimation";
@@ -56,6 +56,10 @@ const Homepage = () => {
   const [showCoolingWarning, setShowCoolingWarning] = useState(false);
   const [ideationComplete, setIdeationComplete] = useState(false);
   const [horseSpeed, setHorseSpeed] = useState(0);
+
+  // Vote distribution state
+  const [showVoteDistribution, setShowVoteDistribution] = useState(false);
+  const [voteDistribution, setVoteDistribution] = useState<{ option: string; count: number; percentage: number }[]>([]);
 
   // Load questions from database
   useEffect(() => {
@@ -154,17 +158,53 @@ const Homepage = () => {
         icon: <Star className="h-4 w-4 text-accent" />,
       });
       
-      const newAnsweredQuestions = [...answeredQuestions, currentQuestion.id];
-      setAnsweredQuestions(newAnsweredQuestions);
-      setOpenAnswer("");
-      
-      // Find the next unanswered question
-      const nextQuestion = availableQuestions.find(
-        (q) => !newAnsweredQuestions.includes(q.id)
-      );
-      
-      // Automatically open the next question or close the modal
-      setCurrentQuestion(nextQuestion || null);
+      // For multiple choice and yes/no, show vote distribution
+      if (currentQuestion.type === 'multiple-choice' || currentQuestion.type === 'yes-no') {
+        // Fetch vote distribution
+        const { data: responses, error: fetchError } = await supabase
+          .from('user_responses')
+          .select('selected_option')
+          .eq('question_id', currentQuestion.id);
+
+        if (!fetchError && responses) {
+          // Count votes
+          const voteCounts: { [key: string]: number } = {};
+          const options = currentQuestion.type === 'yes-no' 
+            ? ['Yes', 'No'] 
+            : (currentQuestion.options || []);
+          
+          options.forEach(opt => {
+            voteCounts[opt] = 0;
+          });
+
+          responses.forEach(r => {
+            if (r.selected_option && voteCounts.hasOwnProperty(r.selected_option)) {
+              voteCounts[r.selected_option]++;
+            }
+          });
+
+          const total = responses.length;
+          const distribution = options.map(opt => ({
+            option: opt,
+            count: voteCounts[opt],
+            percentage: total > 0 ? (voteCounts[opt] / total) * 100 : 0
+          }));
+
+          setVoteDistribution(distribution);
+          setShowVoteDistribution(true);
+        }
+      } else {
+        // For other question types, move to next immediately
+        const newAnsweredQuestions = [...answeredQuestions, currentQuestion.id];
+        setAnsweredQuestions(newAnsweredQuestions);
+        setOpenAnswer("");
+        
+        const nextQuestion = availableQuestions.find(
+          (q) => !newAnsweredQuestions.includes(q.id)
+        );
+        
+        setCurrentQuestion(nextQuestion || null);
+      }
     }
   };
 
@@ -1028,6 +1068,77 @@ const Homepage = () => {
       </Tabs>
 
       {renderQuestionModal()}
+      
+      {/* Vote Distribution Modal */}
+      {showVoteDistribution && currentQuestion && (
+        <div 
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => {
+            setShowVoteDistribution(false);
+            const newAnsweredQuestions = [...answeredQuestions, currentQuestion.id];
+            setAnsweredQuestions(newAnsweredQuestions);
+            setOpenAnswer("");
+            
+            const nextQuestion = availableQuestions.find(
+              (q) => !newAnsweredQuestions.includes(q.id)
+            );
+            
+            setCurrentQuestion(nextQuestion || null);
+          }}
+        >
+          <Card 
+            className="max-w-2xl w-full p-8 shadow-2xl animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-6">
+              <div className="text-center">
+                <BarChart3 className="h-16 w-16 mx-auto mb-4 text-primary" />
+                <h2 className="text-2xl font-bold mb-2">Vote Distribution</h2>
+                <p className="text-muted-foreground">See how others answered</p>
+              </div>
+
+              <div className="space-y-4">
+                {voteDistribution.map((item, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{item.option}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {item.count} {item.count === 1 ? 'vote' : 'votes'} ({item.percentage.toFixed(1)}%)
+                      </span>
+                    </div>
+                    <div className="relative h-8 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 flex items-center justify-center text-xs font-semibold text-primary-foreground"
+                        style={{ width: `${item.percentage}%` }}
+                      >
+                        {item.percentage > 10 && `${item.percentage.toFixed(0)}%`}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  setShowVoteDistribution(false);
+                  const newAnsweredQuestions = [...answeredQuestions, currentQuestion.id];
+                  setAnsweredQuestions(newAnsweredQuestions);
+                  setOpenAnswer("");
+                  
+                  const nextQuestion = availableQuestions.find(
+                    (q) => !newAnsweredQuestions.includes(q.id)
+                  );
+                  
+                  setCurrentQuestion(nextQuestion || null);
+                }}
+              >
+                Continue
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
