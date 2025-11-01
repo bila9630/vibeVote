@@ -92,77 +92,87 @@ const questionsData = [
 
 const Analytics = () => {
   const navigate = useNavigate();
-  const [realQuestion, setRealQuestion] = useState<any>(null);
+  const [realQuestions, setRealQuestions] = useState<any[]>([]);
 
   useEffect(() => {
-    const loadRealQuestion = async () => {
-      const questionId = 'a5f7c5f5-2285-4ec8-8bf5-ffeade3eb5ce';
-      
-      // Fetch question details
-      const { data: questionData, error: questionError } = await supabase
+    const loadRealQuestions = async () => {
+      // Fetch all questions
+      const { data: questionsData, error: questionsError } = await supabase
         .from('questions')
         .select('*')
-        .eq('id', questionId)
-        .single();
+        .order('created_at', { ascending: false });
 
-      if (questionError) {
-        console.error('Error loading question:', questionError);
+      if (questionsError) {
+        console.error('Error loading questions:', questionsError);
         return;
       }
 
-      // Fetch all responses for this question
-      const { data: responsesData, error: responsesError } = await supabase
+      // Fetch all responses
+      const { data: allResponses, error: responsesError } = await supabase
         .from('user_responses')
-        .select('*')
-        .eq('question_id', questionId);
+        .select('*');
 
       if (responsesError) {
         console.error('Error loading responses:', responsesError);
         return;
       }
 
-      // Aggregate responses by option
-      const options = (questionData.options as any)?.options || [];
-      const responseCounts: { [key: string]: number } = {};
-      
-      options.forEach((opt: string) => {
-        responseCounts[opt] = 0;
-      });
+      // Process each question
+      const processedQuestions = questionsData.map((questionData) => {
+        const responsesForQuestion = allResponses.filter(
+          (r) => r.question_id === questionData.id
+        );
 
-      responsesData.forEach((response) => {
-        const option = response.selected_option;
-        if (option && responseCounts.hasOwnProperty(option)) {
-          responseCounts[option]++;
+        const totalResponses = responsesForQuestion.length;
+        const responseRate = totalResponses > 0 ? 100 : 0;
+
+        // Format type
+        const type = questionData.question_type === 'multiple-choice' ? 'Multiple Choice' : 
+                     questionData.question_type === 'yes-no' ? 'Yes/No' : 
+                     questionData.question_type === 'open-ended' ? 'Open-ended' :
+                     questionData.question_type === 'ranking' ? 'Ranking' : 'Ideation';
+
+        // For multiple-choice and yes-no questions, aggregate responses
+        let chartData = [];
+        if (questionData.question_type === 'multiple-choice' || questionData.question_type === 'yes-no') {
+          const options = (questionData.options as any)?.options || [];
+          const responseCounts: { [key: string]: number } = {};
+          
+          options.forEach((opt: string) => {
+            responseCounts[opt] = 0;
+          });
+
+          responsesForQuestion.forEach((response) => {
+            const option = response.selected_option;
+            if (option && responseCounts.hasOwnProperty(option)) {
+              responseCounts[option]++;
+            }
+          });
+
+          chartData = options.map((opt: string, idx: number) => ({
+            name: opt,
+            value: responseCounts[opt],
+            fill: idx === 0 ? "hsl(var(--success))" : 
+                  idx === 1 ? "hsl(var(--primary))" : 
+                  idx === 2 ? "hsl(var(--accent))" : 
+                  "hsl(var(--destructive))"
+          }));
         }
+
+        return {
+          id: questionData.id,
+          question: questionData.question_text,
+          type,
+          totalResponses,
+          responseRate,
+          responses: chartData,
+        };
       });
 
-      // Format for charts
-      const chartData = options.map((opt: string, idx: number) => ({
-        name: opt,
-        value: responseCounts[opt],
-        fill: idx === 0 ? "hsl(var(--success))" : 
-              idx === 1 ? "hsl(var(--primary))" : 
-              idx === 2 ? "hsl(var(--accent))" : 
-              "hsl(var(--destructive))"
-      }));
-
-      const totalResponses = responsesData.length;
-      const responseRate = totalResponses > 0 ? 100 : 0;
-
-      setRealQuestion({
-        id: questionData.id,
-        question: questionData.question_text,
-        type: questionData.question_type === 'multiple-choice' ? 'Multiple Choice' : 
-              questionData.question_type === 'yes-no' ? 'Yes/No' : 
-              questionData.question_type === 'open-ended' ? 'Open-ended' :
-              questionData.question_type === 'ranking' ? 'Ranking' : 'Ideation',
-        totalResponses,
-        responseRate,
-        responses: chartData,
-      });
+      setRealQuestions(processedQuestions);
     };
 
-    loadRealQuestion();
+    loadRealQuestions();
   }, []);
 
   return (
@@ -175,12 +185,13 @@ const Analytics = () => {
 
       {/* Questions List */}
       <Accordion type="single" collapsible className="space-y-4">
-        {/* Real Question from Database */}
-        {realQuestion && (
+        {/* Real Questions from Database */}
+        {realQuestions.map((realQuestion, index) => (
           <AccordionItem 
             key={realQuestion.id} 
             value={`question-${realQuestion.id}`}
             className="border rounded-lg shadow-md bg-card animate-fade-in"
+            style={{ animationDelay: `${index * 0.05}s` }}
           >
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-start justify-between w-full pr-4">
@@ -204,7 +215,7 @@ const Analytics = () => {
               {/* Analytics Content */}
               <div className="grid lg:grid-cols-2 gap-6 pt-4">
                 {/* Chart Section */}
-                {(realQuestion.type === "Multiple Choice" || realQuestion.type === "Yes/No") && (
+                {(realQuestion.type === "Multiple Choice" || realQuestion.type === "Yes/No") && realQuestion.responses.length > 0 && (
                   <div>
                     <h4 className="text-lg font-semibold mb-4 flex items-center">
                       <BarChart3 className="mr-2 h-5 w-5 text-primary" />
@@ -276,7 +287,7 @@ const Analytics = () => {
               </div>
             </AccordionContent>
           </AccordionItem>
-        )}
+        ))}
         
         {/* Mock Questions */}
         {questionsData.map((question, index) => (
