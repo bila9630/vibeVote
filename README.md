@@ -8,7 +8,7 @@ A gamified employee feedback platform that transforms organizational feedback in
 
 ## 🌟 Overview
 
-Pulse Game revolutionizes how organizations collect and analyze employee feedback by gamifying the entire experience. Users engage with daily questions, earn XP, level up, and compete on leaderboards—all while providing valuable insights to their organization.
+vibeVote revolutionizes how organizations collect and analyze employee feedback by gamifying the entire experience. Users engage with daily questions, earn XP, level up, and compete on leaderboards—all while providing valuable insights to their organization.
 
 ## ✨ Key Features
 
@@ -169,7 +169,7 @@ graph TB
 ## 📁 Project Structure
 
 ```
-pulse-game/
+vibeVote/
 ├── src/
 │   ├── components/          # Reusable UI components
 │   │   ├── ui/             # shadcn/ui primitives
@@ -212,8 +212,8 @@ pulse-game/
 1. **Clone the repository**
 
    ```bash
-   git clone <YOUR_GIT_URL>
-   cd pulse-game
+   git clone git@github.com:bila9630/vibeVote.git
+   cd vibeVote
    ```
 
 2. **Install dependencies**
