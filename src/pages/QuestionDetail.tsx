@@ -302,7 +302,13 @@ const QuestionDetail = () => {
           <span className="text-sm text-muted-foreground">
             {question.totalResponses} responses
           </span>
-          <span className="text-sm text-success flex items-center">
+          <span className={`text-sm flex items-center font-medium ${
+            question.responseRate > 85 
+              ? 'text-success' 
+              : question.responseRate >= 50 
+              ? 'text-accent' 
+              : 'text-destructive'
+          }`}>
             <TrendingUp className="h-4 w-4 mr-1" />
             {question.responseRate}% response rate
           </span>
