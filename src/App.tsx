@@ -13,7 +13,6 @@ const QuestionDetail = lazy(() => import("./pages/QuestionDetail"));
 const Rewards = lazy(() => import("./pages/Rewards"));
 const Trees = lazy(() => import("./pages/Trees"));
 const Profile = lazy(() => import("./pages/Profile"));
-const Ideation = lazy(() => import("./pages/Ideation"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -33,7 +32,6 @@ const App = () => (
               <Route path="/rewards" element={<Rewards />} />
               <Route path="/trees" element={<Trees />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/ideation" element={<Ideation />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

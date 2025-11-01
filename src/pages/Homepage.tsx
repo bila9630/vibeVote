@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { WordCloudResults } from "@/components/WordCloudResults";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { RankingDragDrop } from "@/components/RankingDragDrop";
+import { IdeationQuestion } from "@/components/IdeationQuestion";
 import { DailyStreakCard } from "@/components/DailyStreakCard";
 import { RelativeLeaderboard } from "@/components/RelativeLeaderboard";
 import { LevelUpModal } from "@/components/LevelUpModal";
@@ -79,7 +79,6 @@ interface Question {
 // Questions are now loaded from the database
 
 const Homepage = () => {
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("new");
   const [answeredQuestions, setAnsweredQuestions] = useState<string[]>([]);
@@ -202,8 +201,7 @@ const Homepage = () => {
         (q) => !answeredQuestions.includes(q.id)
       );
       if (firstUnanswered) {
-        // Use handleStartQuestion to properly handle ideation questions
-        handleStartQuestion(firstUnanswered);
+        setCurrentQuestion(firstUnanswered);
       }
     }
   }, [viewMode, currentQuestion, availableQuestions, answeredQuestions, showChallengeSurface]);
@@ -237,18 +235,6 @@ const Homepage = () => {
   }, [showEvaluation]);
 
   const handleStartQuestion = (question: Question) => {
-    // If it's an ideation question, navigate to dedicated page
-    if (question.type === "ideation") {
-      navigate('/ideation', {
-        state: {
-          questionId: question.id,
-          questionText: question.question,
-          xpReward: question.xpReward
-        }
-      });
-      return;
-    }
-    
     setCurrentQuestion(question);
     setShowEvaluation(false);
     setEvaluationResult(null);
@@ -702,13 +688,22 @@ const Homepage = () => {
                   />
                 )}
                 
-                {/* Ideation Game - Navigate to dedicated page */}
+                {/* Ideation Game */}
                 {currentQuestion.type === "ideation" && (
-                  <div className="text-center space-y-4 py-8">
-                    <p className="text-muted-foreground">
-                      Redirecting to ideation challenge...
-                    </p>
-                  </div>
+                  <IdeationQuestion
+                    questionId={currentQuestion.id}
+                    questionText={currentQuestion.question}
+                    xpReward={currentQuestion.xpReward}
+                    userProgress={userProgress}
+                    setUserProgress={setUserProgress}
+                    answeredQuestions={answeredQuestions}
+                    setAnsweredQuestions={setAnsweredQuestions}
+                    onClose={() => setCurrentQuestion(null)}
+                    onLevelUp={(rewards) => {
+                      setNewRewards(rewards);
+                      setShowLevelUp(true);
+                    }}
+                  />
                 )}
               </>
             )}
@@ -899,13 +894,22 @@ const Homepage = () => {
                 />
               )}
               
-              {/* Ideation Game - Navigate to dedicated page */}
+              {/* Ideation Game */}
               {currentQuestion.type === "ideation" && (
-                <div className="text-center space-y-4 py-8">
-                  <p className="text-muted-foreground">
-                    Redirecting to ideation challenge...
-                  </p>
-                </div>
+                <IdeationQuestion
+                  questionId={currentQuestion.id}
+                  questionText={currentQuestion.question}
+                  xpReward={currentQuestion.xpReward}
+                  userProgress={userProgress}
+                  setUserProgress={setUserProgress}
+                  answeredQuestions={answeredQuestions}
+                  setAnsweredQuestions={setAnsweredQuestions}
+                  onClose={handleExitPlayMode}
+                  onLevelUp={(rewards) => {
+                    setNewRewards(rewards);
+                    setShowLevelUp(true);
+                  }}
+                />
               )}
             </>
           )}

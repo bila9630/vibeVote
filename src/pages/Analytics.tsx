@@ -192,111 +192,12 @@ const Analytics = () => {
     loadRealQuestions();
   }, []);
 
-  // Mock data for demo charts
-  const trendingTopicsData = [
-    { name: 'Wellbeing', value: 32, fill: 'hsl(var(--success))' },
-    { name: 'Productivity', value: 28, fill: 'hsl(var(--primary))' },
-    { name: 'Focus', value: 22, fill: 'hsl(var(--accent))' },
-    { name: 'Creativity', value: 18, fill: 'hsl(var(--secondary))' },
-  ];
-
-  const monthlyActivityData = [
-    { month: 'Jan', users: 45 },
-    { month: 'Feb', users: 52 },
-    { month: 'Mar', users: 61 },
-    { month: 'Apr', users: 58 },
-    { month: 'May', users: 67 },
-    { month: 'Jun', users: 73 },
-    { month: 'Jul', users: 71 },
-    { month: 'Aug', users: 68 },
-    { month: 'Sep', users: 75 },
-    { month: 'Oct', users: 72 },
-    { month: 'Nov', users: 78 },
-    { month: 'Dec', users: 82 },
-  ];
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Question Analytics</h1>
         <p className="text-muted-foreground text-lg">Detailed insights for each feedback question</p>
-      </div>
-
-      {/* Analytics Charts */}
-      <div className="grid lg:grid-cols-2 gap-6 mb-8">
-        {/* Trending Topics Pie Chart */}
-        <Card className="p-6">
-          <div className="mb-4">
-            <h2 className="text-2xl font-bold mb-1 flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-primary" />
-              Trending Topics
-            </h2>
-            <p className="text-sm text-muted-foreground">Most discussed themes in feedback</p>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={trendingTopicsData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
-                dataKey="value"
-              >
-                {trendingTopicsData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: "hsl(var(--card))", 
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px"
-                }} 
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
-
-        {/* Monthly User Activity Bar Chart */}
-        <Card className="p-6">
-          <div className="mb-4">
-            <h2 className="text-2xl font-bold mb-1 flex items-center gap-2">
-              <BarChart3 className="h-6 w-6 text-primary" />
-              Monthly User Activity
-            </h2>
-            <p className="text-sm text-muted-foreground">Active users throughout the year</p>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyActivityData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis 
-                dataKey="month" 
-                stroke="hsl(var(--muted-foreground))"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
-              />
-              <YAxis 
-                stroke="hsl(var(--muted-foreground))"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: "hsl(var(--card))", 
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px"
-                }}
-                cursor={{ fill: 'hsl(var(--muted))' }}
-              />
-              <Bar 
-                dataKey="users" 
-                fill="hsl(var(--primary))" 
-                radius={[8, 8, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
       </div>
 
       {/* Questions List */}
