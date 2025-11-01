@@ -216,51 +216,47 @@ const Homepage = () => {
             </div>
           </div>
 
-          {/* Days of Week */}
-          <div className="flex items-center justify-between mb-4">
-            {(isMobile ? ['W', 'T', 'F', 'S', 'S'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S']).map((day, index) => (
-              <div key={index} className="text-center">
-                <p className="text-white/70 text-sm font-medium mb-3">{day}</p>
-              </div>
-            ))}
-          </div>
-
           {/* Streak Progress */}
           <div className="relative">
             {/* Connection Line */}
-            <div className="absolute top-1/2 left-0 right-0 h-1 bg-white/30 -translate-y-1/2" 
+            <div className="absolute top-[calc(50%+12px)] left-0 right-0 h-1 bg-white/30" 
                  style={{ left: '5%', right: '5%', width: '90%' }} />
             
             {/* Progress Line */}
-            <div className="absolute top-1/2 left-0 h-1 bg-white -translate-y-1/2" 
+            <div className="absolute top-[calc(50%+12px)] left-0 h-1 bg-white" 
                  style={{ left: '5%', width: isMobile ? '72%' : '77%' }} />
 
-            {/* Day Circles */}
+            {/* Days with Circles */}
             <div className="flex items-center justify-between relative">
-              {(isMobile ? [true, true, true, true, false] : [true, true, true, true, true, true, false]).map((completed, index) => (
-                <div
-                  key={index}
-                  className={`h-10 w-10 rounded-full flex items-center justify-center transition-all ${
-                    completed
-                      ? 'bg-white shadow-lg'
-                      : 'bg-white/30 backdrop-blur-sm border-2 border-white'
-                  }`}
-                >
-                  {completed && (
-                    <svg
-                      className="h-5 w-5 text-[#F59E0B]"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={3}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
+              {(isMobile 
+                ? [{ day: 'W', completed: true }, { day: 'T', completed: true }, { day: 'F', completed: true }, { day: 'S', completed: true }, { day: 'S', completed: false }]
+                : [{ day: 'S', completed: true }, { day: 'M', completed: true }, { day: 'T', completed: true }, { day: 'W', completed: true }, { day: 'T', completed: true }, { day: 'F', completed: true }, { day: 'S', completed: false }]
+              ).map((item, index) => (
+                <div key={index} className="flex flex-col items-center gap-3">
+                  <p className="text-white/70 text-sm font-medium">{item.day}</p>
+                  <div
+                    className={`h-10 w-10 rounded-full flex items-center justify-center transition-all ${
+                      item.completed
+                        ? 'bg-white shadow-lg'
+                        : 'bg-white/30 backdrop-blur-sm border-2 border-white'
+                    }`}
+                  >
+                    {item.completed && (
+                      <svg
+                        className="h-5 w-5 text-[#F59E0B]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
