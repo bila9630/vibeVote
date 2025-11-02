@@ -474,7 +474,14 @@ const QuestionDetail = () => {
             </p>
             
             <div className="grid md:grid-cols-2 gap-4">
-              {trendAnalysis.themes?.map((theme: any, idx: number) => (
+              {trendAnalysis.themes
+                ?.filter((theme: any) => 
+                  !theme.name.toLowerCase().includes('unclear') && 
+                  !theme.name.toLowerCase().includes('inappropriate') &&
+                  !theme.name.toLowerCase().includes('not applicable') &&
+                  theme.name.trim() !== ''
+                )
+                .map((theme: any, idx: number) => (
                 <div key={idx} className="p-4 bg-background/80 rounded-lg border border-border">
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-semibold text-lg">{theme.name}</h3>
